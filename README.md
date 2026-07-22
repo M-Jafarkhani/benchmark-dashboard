@@ -21,6 +21,18 @@ Open <http://localhost:8000>. API documentation is at `/docs`; the runs API is
 at `/api/runs`. Results are cached for five minutes, while the page's Refresh
 button requests fresh upstream data.
 
+Copy `.env.example` to `.env`, then fill in your RoHub credentials:
+
+```dotenv
+ROHUB_USERNAME=your-rohub-username
+ROHUB_PASSWORD=your-rohub-password
+```
+
+The `.env` configuration file is read directly and excluded from Git. These
+credentials are used to download each benchmark's JSON-LD Annotation Collection;
+the catalog reads its benchmark name, parameters, and metrics with RDFLib,
+following `joint-kg.ipynb`.
+
 ## Publish
 
 Build and deploy the included Dockerfile on a platform such as Render, Railway,

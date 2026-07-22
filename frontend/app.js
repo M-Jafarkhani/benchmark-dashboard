@@ -3,6 +3,7 @@ const body = document.querySelector("#runs");
 const benchmarksBody = document.querySelector("#benchmarks");
 const count = document.querySelector("#count");
 const updated = document.querySelector("#updated");
+const benchmarkDialog = document.querySelector("#benchmark-dialog");
 
 function label(url) {
   if (!url) return "Unavailable";
@@ -61,6 +62,40 @@ function rohubIconLink(url) {
   return anchor;
 }
 
+function tagList(values) {
+  if (!values?.length) return document.createTextNode("—");
+  const list = document.createElement("ul");
+  list.className = "tag-list";
+  values.forEach(value => {
+    const item = document.createElement("li");
+    item.textContent = value;
+    list.append(item);
+  });
+  return list;
+}
+
+function showBenchmarkDetails(benchmark) {
+  document.querySelector("#dialog-title").textContent =
+    benchmark.benchmark || label(benchmark.benchmark_repo);
+  document.querySelector("#dialog-parameters").replaceChildren(tagList(benchmark.parameters));
+  document.querySelector("#dialog-metrics").replaceChildren(tagList(benchmark.metrics));
+  benchmarkDialog.showModal();
+}
+
+function detailsButton(benchmark) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "icon-link icon-button";
+  button.title = "Show parameters and metrics";
+  button.setAttribute("aria-label", `Show details for ${benchmark.benchmark || label(benchmark.benchmark_repo)}`);
+  const icon = document.createElement("img");
+  icon.src = "/assets/icons/details.svg";
+  icon.alt = "";
+  button.append(icon);
+  button.addEventListener("click", () => showBenchmarkDetails(benchmark));
+  return button;
+}
+
 function renderBenchmarks() {
   const unique = new Map();
   state.runs.forEach(run => unique.set(run.benchmark_url || run.benchmark_repo, run));
@@ -71,7 +106,7 @@ function renderBenchmarks() {
   if (!benchmarks.length) {
     const row = benchmarksBody.insertRow();
     const cell = row.insertCell();
-    cell.colSpan = 3;
+    cell.colSpan = 4;
     cell.className = "state";
     cell.textContent = "No benchmarks are published yet.";
   }
@@ -79,7 +114,8 @@ function renderBenchmarks() {
     const row = benchmarksBody.insertRow();
     const name = row.insertCell();
     name.className = "benchmark-name";
-    name.textContent = label(benchmark.benchmark_repo);
+    name.textContent = benchmark.benchmark || label(benchmark.benchmark_repo);
+    row.insertCell().append(detailsButton(benchmark));
     row.insertCell().append(githubIconLink(benchmark.benchmark_repo));
     row.insertCell().append(rohubIconLink(benchmark.benchmark_url));
   });
@@ -141,7 +177,7 @@ async function load(refresh = false) {
   } catch (error) {
     body.innerHTML = `<tr><td colspan="5" class="state error"></td></tr>`;
     body.querySelector("td").textContent = error.message;
-    benchmarksBody.innerHTML = '<tr><td colspan="3" class="state error"></td></tr>';
+    benchmarksBody.innerHTML = '<tr><td colspan="4" class="state error"></td></tr>';
     benchmarksBody.querySelector("td").textContent = error.message;
     document.querySelector("#benchmark-count").textContent = "Data unavailable";
     count.textContent = "Data unavailable";
@@ -152,6 +188,10 @@ async function load(refresh = false) {
 
 document.querySelector("#search").addEventListener("input", event => { state.query = event.target.value; render(); });
 document.querySelector("#refresh").addEventListener("click", () => load(true));
+document.querySelector("#close-dialog").addEventListener("click", () => benchmarkDialog.close());
+benchmarkDialog.addEventListener("click", event => {
+  if (event.target === benchmarkDialog) benchmarkDialog.close();
+});
 document.querySelectorAll("[data-sort]").forEach(button => button.addEventListener("click", () => {
   const key = button.dataset.sort;
   state.direction = state.sort === key ? -state.direction : 1;
