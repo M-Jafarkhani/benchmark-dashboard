@@ -1,0 +1,14 @@
+@import "primeicons/primeicons.css";
+
+:root {
+  color-scheme:light; font-family:Inter,ui-sans-serif,system-ui,sans-serif;
+  --app-bg:#f6f8f5; --surface:#ffffff; --text:#17201b; --muted:#69736d;
+  --line:#dfe5e1; --accent:#176b4a; --soft:#f3f8f4; --hero:#17201b;
+}
+.app-dark {
+  color-scheme:dark; --app-bg:#101512; --surface:#18201b; --text:#e7eee9;
+  --muted:#a7b2ab; --line:#34413a; --accent:#7bd4a5; --soft:#202b24; --hero:#0b100d;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--app-bg); color:var(--text); transition:background .2s,color .2s; }
+a { color:var(--accent); text-underline-offset:3px; }

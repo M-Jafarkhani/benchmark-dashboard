@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .services import (
@@ -13,7 +12,7 @@ from .services import (
     sparql_log,
 )
 
-FRONTEND = Path(__file__).resolve().parent.parent / "frontend"
+ANGULAR_UI = Path(__file__).resolve().parent.parent / "ui" / "dist" / "ui" / "browser"
 app = FastAPI(title="Semantic Benchmark Dashboard", version="0.1.0")
 
 
@@ -52,9 +51,4 @@ def delete_sparql_log():
     clear_sparql_log()
 
 
-@app.get("/", include_in_schema=False)
-def index() -> FileResponse:
-    return FileResponse(FRONTEND / "index.html")
-
-
-app.mount("/assets", StaticFiles(directory=FRONTEND), name="assets")
+app.mount("/", StaticFiles(directory=ANGULAR_UI, html=True, check_dir=False), name="ui")
