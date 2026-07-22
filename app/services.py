@@ -5,7 +5,9 @@ import math
 import re
 import tempfile
 import time
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 from threading import Lock
@@ -38,6 +40,9 @@ WHERE {
 
 _cache: tuple[float, list[dict[str, Any]]] | None = None
 _cache_lock = Lock()
+_sparql_log: deque[dict[str, Any]] = deque(maxlen=100)
+_sparql_log_lock = Lock()
+_sparql_log_sequence = 0
 
 M4I = Namespace("http://w3id.org/nfdi4ing/metadata4ing#")
 BFO_HAS_PART = Namespace("http://purl.obolibrary.org/obo/")["BFO_0000051"]
@@ -49,6 +54,42 @@ class UpstreamError(RuntimeError):
 
 class RunNotFoundError(LookupError):
     pass
+
+
+def _start_sparql_log(query: str) -> int:
+    global _sparql_log_sequence
+    with _sparql_log_lock:
+        _sparql_log_sequence += 1
+        identifier = _sparql_log_sequence
+        _sparql_log.appendleft({
+            "id": identifier,
+            "started_at": datetime.now(timezone.utc).isoformat(),
+            "query": query.strip(),
+            "status": "running",
+            "duration_ms": None,
+            "error": None,
+        })
+        return identifier
+
+
+def _finish_sparql_log(identifier: int, started: float, error: Exception | None = None) -> None:
+    with _sparql_log_lock:
+        entry = next((item for item in _sparql_log if item["id"] == identifier), None)
+        if entry is not None:
+            entry["status"] = "failed" if error else "succeeded"
+            entry["duration_ms"] = round((time.monotonic() - started) * 1000, 1)
+            entry["error"] = str(error) if error else None
+
+
+def sparql_log() -> list[dict[str, Any]]:
+    """Return a snapshot of recent SPARQL executions, newest first."""
+    with _sparql_log_lock:
+        return [dict(entry) for entry in _sparql_log]
+
+
+def clear_sparql_log() -> None:
+    with _sparql_log_lock:
+        _sparql_log.clear()
 
 
 def _fetch_json(url: str) -> Any:
@@ -73,12 +114,16 @@ def _query_sparql():
 
 
 def _sparql(query: str) -> list[dict[str, str | None]]:
+    started = time.monotonic()
+    log_identifier = _start_sparql_log(query)
     try:
-        print(f"Querying RoHub SPARQL endpoint:\n{query}")
         frame = _query_sparql()(query)
-        return frame.to_dict(orient="records")
+        result = frame.to_dict(orient="records")
     except Exception as error:
+        _finish_sparql_log(log_identifier, started, error)
         raise UpstreamError("Could not query the production RoHub endpoint") from error
+    _finish_sparql_log(log_identifier, started)
+    return result
 
 
 def _software_name(url: str) -> str:

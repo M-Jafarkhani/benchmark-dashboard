@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Explore published semantic benchmark runs.">
   <title>Benchmark runs</title>
-  <link rel="stylesheet" href="/assets/styles.css?v=15">
+  <link rel="stylesheet" href="/assets/styles.css?v=18">
   <script src="https://cdn.plot.ly/plotly-3.5.1.min.js" charset="utf-8" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@36.0.1/dist/ag-grid-community.min.js" defer></script>
-  <script src="/assets/app.js?v=15" defer></script>
+  <script src="/assets/app.js?v=18" defer></script>
 </head>
 <body>
   <header class="hero">
@@ -38,6 +38,7 @@
         <span class="sr-only">Search runs</span>
         <input id="search" type="search" placeholder="Search software or benchmark…" autocomplete="off">
       </label>
+      <button id="compare-runs" type="button" disabled>Compare selected</button>
       <button id="refresh" type="button">Refresh data</button>
     </section>
     <div class="summary" aria-live="polite">
@@ -81,6 +82,20 @@
     </div>
     <div id="values-dialog-content" class="values-content" aria-live="polite"></div>
   </dialog>
-  <footer>Data sourced live from RoHub and zbMATH Open.</footer>
+  <button id="open-sparql-log" class="sparql-log-launcher" type="button">SPARQL log</button>
+  <dialog id="sparql-log-dialog" class="sparql-log-dialog" aria-labelledby="sparql-log-title">
+    <div class="dialog-heading">
+      <div>
+        <div class="eyebrow dark">Live execution flow</div>
+        <h2 id="sparql-log-title">SPARQL queries</h2>
+        <p id="sparql-log-count" class="dialog-context">Loading…</p>
+      </div>
+      <div class="sparql-log-actions">
+        <button id="clear-sparql-log" type="button">Clear logs</button>
+        <button id="close-sparql-log" class="dialog-close" type="button" aria-label="Close dialog">×</button>
+      </div>
+    </div>
+    <div id="sparql-log-content" class="sparql-log-content" aria-live="polite"></div>
+  </dialog>
 </body>
 </html>

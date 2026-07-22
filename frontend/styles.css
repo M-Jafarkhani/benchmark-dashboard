@@ -22,6 +22,9 @@ h2 { margin:3px 0 0; font-family:Georgia, serif; font-size:30px; font-weight:400
 button { font:inherit; cursor:pointer; }
 #refresh { border:0; border-radius:10px; padding:0 20px; background:var(--green); color:white; font-weight:700; }
 #refresh:disabled { opacity:.55; cursor:wait; }
+#compare-runs { border:1px solid var(--green); border-radius:10px; padding:0 18px; background:white; color:var(--green); font-weight:700; white-space:nowrap; }
+#compare-runs:hover:not(:disabled) { background:#edf5f0; }
+#compare-runs:disabled { border-color:var(--line); color:#9aa39e; cursor:not-allowed; }
 .summary { display:flex; justify-content:space-between; margin:22px 2px 10px; color:var(--muted); font-size:13px; }
 .table-shell { overflow:auto; border:1px solid var(--line); border-radius:14px; background:white; box-shadow:0 12px 35px #1b332407; }
 .dashboard-grid { width:100%; border-radius:14px; background:white; box-shadow:0 12px 35px #1b332407; overflow:hidden; }
@@ -81,6 +84,23 @@ dialog::backdrop { background:#101a15a8; backdrop-filter:blur(2px); }
 .plot-control select:focus { border-color:var(--green); outline:3px solid #176b4a18; }
 .plot-message { min-height:20px; margin:10px 2px 4px; color:var(--muted); font-size:12px; }
 .run-plot { width:100%; height:420px; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+.sparql-log-launcher { position:fixed; right:22px; bottom:22px; z-index:10; border:0; border-radius:999px; padding:11px 17px; background:var(--ink); color:white; font-size:13px; font-weight:700; box-shadow:0 8px 25px #07180e40; }
+.sparql-log-launcher:hover { background:var(--green); }
+.sparql-log-dialog { width:min(920px, calc(100% - 32px)); height:min(760px, calc(100vh - 48px)); overflow:hidden; }
+.sparql-log-dialog[open] { display:flex; flex-direction:column; }
+.sparql-log-actions { display:flex; align-items:center; gap:9px; }
+#clear-sparql-log { border:1px solid #d3ddd6; border-radius:8px; padding:8px 12px; background:white; color:#a23b31; font-size:12px; font-weight:700; }
+#clear-sparql-log:hover:not(:disabled) { background:#fff2f0; border-color:#e2b8b2; }
+#clear-sparql-log:disabled { opacity:.5; cursor:wait; }
+.sparql-log-content { flex:1 1 auto; min-height:0; margin-top:18px; overflow:auto; overscroll-behavior:contain; }
+.sparql-entry { margin-bottom:12px; border:1px solid var(--line); border-radius:10px; background:#f9fbf9; overflow:hidden; }
+.sparql-entry-heading { display:flex; align-items:center; gap:12px; padding:9px 12px; border-bottom:1px solid var(--line); color:var(--muted); font-size:12px; }
+.query-status { border-radius:999px; padding:2px 8px; font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+.query-status.running { background:#fff2c7; color:#725a0b; }
+.query-status.succeeded { background:#dff2e5; color:#235d39; }
+.query-status.failed { background:#f8dfdc; color:#8c3028; }
+.sparql-entry pre { margin:0; padding:14px; overflow:auto; color:#26352d; font:12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; white-space:pre; }
+.sparql-error { margin:0; padding:10px 14px; border-top:1px solid #efc9c4; background:#fff4f2; color:#a23b31; font-size:12px; }
 .software-name { font-weight:600; }
 .mono { font:12px ui-monospace, SFMono-Regular, Menlo, monospace; }
 .state { padding:55px; text-align:center; color:var(--muted); }

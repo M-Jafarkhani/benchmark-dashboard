@@ -11,6 +11,9 @@ let currentPlotDraw = null;
 let currentRunValuesTab = "values";
 let benchmarkGridApi = null;
 let runsGridApi = null;
+const sparqlLogDialog = document.querySelector("#sparql-log-dialog");
+const sparqlLogContent = document.querySelector("#sparql-log-content");
+let sparqlLogTimer = null;
 
 function label(url) {
   if (!url) return "Unavailable";
@@ -43,6 +46,87 @@ function publishedDate(value) {
       ? { timeZone: "UTC" }
       : { hour: "2-digit", minute: "2-digit", timeZoneName: "short" }),
   }).format(date);
+}
+
+function renderSparqlLog(items) {
+  document.querySelector("#sparql-log-count").textContent =
+    `${items.length} recent ${items.length === 1 ? "query" : "queries"} · updates every second`;
+  if (!items.length) {
+    const empty = document.createElement("p");
+    empty.className = "dialog-state";
+    empty.textContent = "No SPARQL query has run yet.";
+    sparqlLogContent.replaceChildren(empty);
+    return;
+  }
+  const entries = items.map(item => {
+    const entry = document.createElement("article");
+    entry.className = "sparql-entry";
+    const header = document.createElement("div");
+    header.className = "sparql-entry-heading";
+    const status = document.createElement("span");
+    status.className = `query-status ${item.status}`;
+    status.textContent = item.status;
+    const time = document.createElement("time");
+    time.dateTime = item.started_at;
+    time.textContent = new Date(item.started_at).toLocaleTimeString();
+    const duration = document.createElement("span");
+    duration.textContent = item.duration_ms === null ? "In progress" : `${item.duration_ms} ms`;
+    header.append(status, time, duration);
+    const query = document.createElement("pre");
+    query.textContent = item.query;
+    entry.append(header, query);
+    if (item.error) {
+      const error = document.createElement("p");
+      error.className = "sparql-error";
+      error.textContent = item.error;
+      entry.append(error);
+    }
+    return entry;
+  });
+  sparqlLogContent.replaceChildren(...entries);
+}
+
+async function refreshSparqlLog() {
+  try {
+    const response = await fetch("/api/sparql-log", { cache: "no-store" });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || "The query log could not be loaded.");
+    renderSparqlLog(payload.items);
+  } catch (error) {
+    const message = document.createElement("p");
+    message.className = "dialog-state error";
+    message.textContent = error.message;
+    sparqlLogContent.replaceChildren(message);
+  }
+}
+
+function openSparqlLog() {
+  sparqlLogDialog.showModal();
+  refreshSparqlLog();
+  sparqlLogTimer = window.setInterval(refreshSparqlLog, 1000);
+}
+
+function closeSparqlLog() {
+  sparqlLogDialog.close();
+  window.clearInterval(sparqlLogTimer);
+  sparqlLogTimer = null;
+}
+
+async function clearSparqlLog() {
+  const button = document.querySelector("#clear-sparql-log");
+  button.disabled = true;
+  try {
+    const response = await fetch("/api/sparql-log", { method: "DELETE" });
+    if (!response.ok) throw new Error("The query log could not be cleared.");
+    renderSparqlLog([]);
+  } catch (error) {
+    const message = document.createElement("p");
+    message.className = "dialog-state error";
+    message.textContent = error.message;
+    sparqlLogContent.replaceChildren(message);
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function githubIconLink(url) {
@@ -107,7 +191,10 @@ function renderRunValues(payload) {
   document.querySelector("#values-dialog-title").textContent =
     payload.benchmark || "Parameters and metrics";
   document.querySelector("#values-dialog-context").textContent =
-    [payload.software_name, `${payload.rows.length} observations`].filter(Boolean).join(" · ");
+    [
+      payload.run_count > 1 ? `${payload.run_count} runs` : payload.software_name,
+      `${payload.rows.length} observations`,
+    ].filter(Boolean).join(" · ");
 
   if (!payload.rows.length) {
     const empty = document.createElement("p");
@@ -125,13 +212,16 @@ function renderRunValues(payload) {
       ? "number"
       : "text"];
   }));
-  const gridRows = payload.rows.map(row => Object.fromEntries(
-    payload.columns.map(column => {
+  const gridRows = payload.rows.map(row => ({
+    __series: row.__series,
+    __software: row.__software,
+    __run_id: row.__run_id,
+    ...Object.fromEntries(payload.columns.map(column => {
       const value = row[column.key];
       if (value === null || value === undefined || value === "") return [column.key, null];
       return [column.key, columnTypes[column.key] === "number" ? Number(value) : String(value)];
-    })
-  ));
+    })),
+  }));
   const plotData = { rows: gridRows };
   const grid = document.createElement("div");
   grid.className = "run-values-grid";
@@ -154,22 +244,28 @@ function createValuesGrid(element, payload, rows, columnTypes, plotData) {
     api.forEachNodeAfterFilterAndSort(node => filtered.push(node.data));
     plotData.rows = filtered;
     document.querySelector("#values-dialog-context").textContent = [
-      payload.software_name,
+      payload.run_count > 1 ? `${payload.run_count} runs` : payload.software_name,
       `${filtered.length} of ${rows.length} observations`,
     ].filter(Boolean).join(" · ");
     if (currentRunValuesTab === "plot" && currentPlotDraw) currentPlotDraw();
   };
   window.agGrid.createGrid(element, {
     rowData: rows,
-    columnDefs: payload.columns.map(column => ({
-      field: column.key,
-      headerName: column.label,
-      headerClass: `ag-header-${column.kind}`,
-      filter: columnTypes[column.key] === "number" ? "agNumberColumnFilter" : "agTextColumnFilter",
-      floatingFilter: true,
-      cellDataType: columnTypes[column.key],
-      minWidth: 155,
-    })),
+    columnDefs: [
+      ...(payload.run_count > 1 ? [
+        { field: "__software", headerName: "Software", filter: "agTextColumnFilter", floatingFilter: true, minWidth: 150, pinned: "left" },
+        { field: "__run_id", headerName: "Run", filter: "agTextColumnFilter", floatingFilter: true, minWidth: 130 },
+      ] : []),
+      ...payload.columns.map(column => ({
+        field: column.key,
+        headerName: column.label,
+        headerClass: `ag-header-${column.kind}`,
+        filter: columnTypes[column.key] === "number" ? "agNumberColumnFilter" : "agTextColumnFilter",
+        floatingFilter: true,
+        cellDataType: columnTypes[column.key],
+        minWidth: 155,
+      })),
+    ],
     defaultColDef: {
       sortable: true,
       resizable: true,
@@ -259,6 +355,7 @@ function buildRunPlot(payload, plotData) {
     const pairs = plotData.rows.map(row => ({
       x: row[xAxis.select.value] === null || row[xAxis.select.value] === "" ? NaN : Number(row[xAxis.select.value]),
       y: row[yAxis.select.value] === null || row[yAxis.select.value] === "" ? NaN : Number(row[yAxis.select.value]),
+      series: row.__series || payload.software_name || "Run",
     })).filter(pair =>
       Number.isFinite(pair.x) && Number.isFinite(pair.y) &&
       (xScale.select.value !== "log" || pair.x > 0) &&
@@ -268,23 +365,27 @@ function buildRunPlot(payload, plotData) {
     message.textContent = pairs.length
       ? `${pairs.length} plotted from ${plotData.rows.length} filtered observations${pairs.length < plotData.rows.length ? ` (${plotData.rows.length - pairs.length} invalid for this scale)` : ""}`
       : "No numeric observations are valid for this axis and scale combination.";
-    window.Plotly.react(chart, [{
-      x: pairs.map(pair => pair.x),
-      y: pairs.map(pair => pair.y),
+    const grouped = new Map();
+    pairs.forEach(pair => grouped.set(pair.series, [...(grouped.get(pair.series) || []), pair]));
+    const colors = ["#176b4a", "#276fbf", "#b05a2b", "#7b4ab5", "#b18a13", "#c13f65"];
+    const traces = [...grouped.entries()].map(([series, values], index) => ({
+      x: values.map(pair => pair.x),
+      y: values.map(pair => pair.y),
       type: "scatter",
       mode: "lines+markers",
-      name: payload.software_name || "Run",
-      marker: { color: "#176b4a", size: 8 },
-      line: { color: "#176b4a", width: 2 },
-      hovertemplate: `${xColumn?.label || "x"}: %{x}<br>${yColumn?.label || "y"}: %{y}<extra></extra>`,
-    }], {
+      name: series,
+      marker: { color: colors[index % colors.length], size: 8 },
+      line: { color: colors[index % colors.length], width: 2 },
+      hovertemplate: `${xColumn?.label || "x"}: %{x}<br>${yColumn?.label || "y"}: %{y}<extra>${series}</extra>`,
+    }));
+    window.Plotly.react(chart, traces, {
       autosize: true,
       margin: { l: 75, r: 24, t: 25, b: 70 },
       paper_bgcolor: "#ffffff",
       plot_bgcolor: "#fafcf9",
       xaxis: { title: xColumn?.label, type: xScale.select.value, automargin: true },
       yaxis: { title: yColumn?.label, type: yScale.select.value, automargin: true },
-      showlegend: false,
+      showlegend: traces.length > 1,
       hovermode: "closest",
     }, {
       responsive: true,
@@ -322,6 +423,54 @@ async function showRunValues(run, button) {
     runValuesContent.replaceChildren(message);
   } finally {
     button.disabled = false;
+  }
+}
+
+async function showComparedRuns(runs, button) {
+  const benchmarkUrls = new Set(runs.map(run => run.benchmark_url));
+  if (benchmarkUrls.size !== 1) return;
+  document.querySelector("#values-dialog-title").textContent = "Loading comparison…";
+  document.querySelector("#values-dialog-context").textContent = `${runs.length} selected runs`;
+  runValuesTabs.hidden = true;
+  currentPlotDraw = null;
+  currentRunValuesTab = "values";
+  runValuesContent.innerHTML = '<p class="dialog-state"><span class="spinner"></span> Running SPARQL queries…</p>';
+  if (!runValuesDialog.open) runValuesDialog.showModal();
+  button.disabled = true;
+  try {
+    const payloads = await Promise.all(runs.map(async run => {
+      const response = await fetch(`/api/run-values?run_id=${encodeURIComponent(run.run_id)}`);
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.detail || "Run values could not be loaded.");
+      return { run, payload };
+    }));
+    const columns = payloads[0].payload.columns.filter(column =>
+      payloads.every(item => item.payload.columns.some(candidate => candidate.key === column.key))
+    );
+    const rows = payloads.flatMap(({ run, payload }) => {
+      const runLabel = label(run.run_id).slice(0, 8);
+      const software = run.software_name || "Unknown software";
+      return payload.rows.map(row => ({
+        ...row,
+        __software: software,
+        __run_id: runLabel,
+        __series: `${software} — ${runLabel}`,
+      }));
+    });
+    renderRunValues({
+      benchmark: payloads[0].payload.benchmark,
+      software_name: null,
+      run_count: runs.length,
+      columns,
+      rows,
+    });
+  } catch (error) {
+    const message = document.createElement("p");
+    message.className = "dialog-state error";
+    message.textContent = error.message;
+    runValuesContent.replaceChildren(message);
+  } finally {
+    updateCompareButton();
   }
 }
 
@@ -384,6 +533,19 @@ function updateRunsCount() {
   count.textContent = `${displayed} of ${state.runs.length} runs`;
 }
 
+function updateCompareButton() {
+  const button = document.querySelector("#compare-runs");
+  const selected = runsGridApi?.getSelectedRows() || [];
+  const sameBenchmark = selected.length > 0 && selected.every(
+    run => run.benchmark_url === selected[0].benchmark_url
+  );
+  button.disabled = selected.length < 2 || !sameBenchmark;
+  button.textContent = selected.length ? `Compare selected (${selected.length})` : "Compare selected";
+  button.title = selected.length >= 2 && !sameBenchmark
+    ? "Select runs from the same benchmark"
+    : "Compare selected runs";
+}
+
 function render() {
   const options = {
     rowData: state.runs,
@@ -414,10 +576,19 @@ function render() {
       },
     ],
     defaultColDef: { sortable: true, resizable: true },
+    getRowId: params => params.data.run_id,
+    rowSelection: {
+      mode: "multiRow",
+      checkboxes: true,
+      headerCheckbox: true,
+      enableClickSelection: false,
+    },
+    selectionColumnDef: { width: 48, pinned: "left", sortable: false, resizable: false },
     quickFilterText: state.query,
     overlayNoRowsTemplate: "No runs are published yet.",
     onGridReady: updateRunsCount,
     onFilterChanged: updateRunsCount,
+    onSelectionChanged: updateCompareButton,
   };
   if (runsGridApi) {
     runsGridApi.setGridOption("rowData", state.runs);
@@ -427,6 +598,7 @@ function render() {
     body.replaceChildren();
     runsGridApi = window.agGrid.createGrid(body, options);
     updateRunsCount();
+    updateCompareButton();
   }
 }
 
@@ -467,6 +639,10 @@ document.querySelector("#search").addEventListener("input", event => {
   if (runsGridApi) runsGridApi.setGridOption("quickFilterText", state.query);
 });
 document.querySelector("#refresh").addEventListener("click", () => load(true));
+document.querySelector("#compare-runs").addEventListener("click", event => {
+  const selected = runsGridApi?.getSelectedRows() || [];
+  if (selected.length >= 2) showComparedRuns(selected, event.currentTarget);
+});
 document.querySelector("#close-dialog").addEventListener("click", () => benchmarkDialog.close());
 benchmarkDialog.addEventListener("click", event => {
   if (event.target === benchmarkDialog) benchmarkDialog.close();
@@ -476,5 +652,15 @@ document.querySelector("#values-tab").addEventListener("click", () => selectRunV
 document.querySelector("#plot-tab").addEventListener("click", () => selectRunValuesTab("plot"));
 runValuesDialog.addEventListener("click", event => {
   if (event.target === runValuesDialog) runValuesDialog.close();
+});
+document.querySelector("#open-sparql-log").addEventListener("click", openSparqlLog);
+document.querySelector("#close-sparql-log").addEventListener("click", closeSparqlLog);
+document.querySelector("#clear-sparql-log").addEventListener("click", clearSparqlLog);
+sparqlLogDialog.addEventListener("close", () => {
+  window.clearInterval(sparqlLogTimer);
+  sparqlLogTimer = null;
+});
+sparqlLogDialog.addEventListener("click", event => {
+  if (event.target === sparqlLogDialog) closeSparqlLog();
 });
 load();
