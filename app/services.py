@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import tempfile
 import time
@@ -46,6 +47,10 @@ class UpstreamError(RuntimeError):
     pass
 
 
+class RunNotFoundError(LookupError):
+    pass
+
+
 def _fetch_json(url: str) -> Any:
     request = Request(
         url,
@@ -69,6 +74,7 @@ def _query_sparql():
 
 def _sparql(query: str) -> list[dict[str, str | None]]:
     try:
+        print(f"Querying RoHub SPARQL endpoint:\n{query}")
         frame = _query_sparql()(query)
         return frame.to_dict(orient="records")
     except Exception as error:
@@ -170,6 +176,66 @@ def _benchmark_metadata(benchmark_url: str) -> dict[str, str | list[str]]:
         "benchmark": names[0] if names else "",
         "parameters": parameters,
         "metrics": metrics,
+    }
+
+
+def _dynamic_query(parameters: list[str], metrics: list[str], graph: str) -> str:
+    from semantic_benchmark.rohub.provenance import build_dynamic_query
+
+    return build_dynamic_query(
+        parameters=parameters,
+        metrics=metrics,
+        named_graphs=[graph],
+    )
+
+
+def _safe_variable_name(label: str) -> str:
+    from semantic_benchmark.rohub.provenance import sanitize_variable_name
+
+    return sanitize_variable_name(label)
+
+
+def _json_value(value: Any) -> str | int | float | bool | None:
+    if value is None:
+        return None
+    if hasattr(value, "item"):
+        value = value.item()
+    if isinstance(value, float) and math.isnan(value):
+        return None
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
+
+
+def query_run_values(run_id: str) -> dict[str, Any]:
+    """Query parameter and metric values from one run's named graph."""
+    run = next((item for item in load_runs() if item.get("run_id") == run_id), None)
+    if run is None:
+        raise RunNotFoundError(f"Published run not found: {run_id}")
+
+    parameters = list(run.get("parameters") or [])
+    metrics = list(run.get("metrics") or [])
+    graph = run.get("graph")
+    if not graph:
+        raise UpstreamError("This run does not have a named graph")
+    if not parameters or not metrics:
+        raise UpstreamError("This run does not define both parameters and metrics")
+
+    columns = [
+        {"key": _safe_variable_name(label), "label": label, "kind": kind}
+        for kind, labels in (("parameter", parameters), ("metric", metrics))
+        for label in labels
+    ]
+    result_rows = _sparql(_dynamic_query(parameters, metrics, graph))
+    return {
+        "run_id": run_id,
+        "software_name": run.get("software_name"),
+        "benchmark": run.get("benchmark") or run.get("benchmark_repo"),
+        "columns": columns,
+        "rows": [
+            {column["key"]: _json_value(row.get(column["key"])) for column in columns}
+            for row in result_rows
+        ],
     }
 
 

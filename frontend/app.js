@@ -4,6 +4,13 @@ const benchmarksBody = document.querySelector("#benchmarks");
 const count = document.querySelector("#count");
 const updated = document.querySelector("#updated");
 const benchmarkDialog = document.querySelector("#benchmark-dialog");
+const runValuesDialog = document.querySelector("#run-values-dialog");
+const runValuesContent = document.querySelector("#values-dialog-content");
+const runValuesTabs = document.querySelector("#values-dialog-tabs");
+let currentPlotDraw = null;
+let currentRunValuesTab = "values";
+let benchmarkGridApi = null;
+let runsGridApi = null;
 
 function label(url) {
   if (!url) return "Unavailable";
@@ -96,89 +103,358 @@ function detailsButton(benchmark) {
   return button;
 }
 
+function renderRunValues(payload) {
+  document.querySelector("#values-dialog-title").textContent =
+    payload.benchmark || "Parameters and metrics";
+  document.querySelector("#values-dialog-context").textContent =
+    [payload.software_name, `${payload.rows.length} observations`].filter(Boolean).join(" · ");
+
+  if (!payload.rows.length) {
+    const empty = document.createElement("p");
+    empty.className = "dialog-state";
+    empty.textContent = "The SPARQL query returned no values for this run.";
+    runValuesContent.replaceChildren(empty);
+    return;
+  }
+
+  const columnTypes = Object.fromEntries(payload.columns.map(column => {
+    const values = payload.rows
+      .map(row => row[column.key])
+      .filter(value => value !== null && value !== undefined && value !== "");
+    return [column.key, values.length > 0 && values.every(value => Number.isFinite(Number(value)))
+      ? "number"
+      : "text"];
+  }));
+  const gridRows = payload.rows.map(row => Object.fromEntries(
+    payload.columns.map(column => {
+      const value = row[column.key];
+      if (value === null || value === undefined || value === "") return [column.key, null];
+      return [column.key, columnTypes[column.key] === "number" ? Number(value) : String(value)];
+    })
+  ));
+  const plotData = { rows: gridRows };
+  const grid = document.createElement("div");
+  grid.className = "run-values-grid";
+  const plot = buildRunPlot(payload, plotData);
+  runValuesContent.replaceChildren(plot, grid);
+  currentPlotDraw = plot.draw;
+  runValuesTabs.hidden = false;
+  selectRunValuesTab("values");
+  requestAnimationFrame(() => createValuesGrid(grid, payload, gridRows, columnTypes, plotData));
+}
+
+function createValuesGrid(element, payload, rows, columnTypes, plotData) {
+  if (!window.agGrid) {
+    element.textContent = "AG Grid could not be loaded. Check the network connection and reload.";
+    element.classList.add("dialog-state", "error");
+    return;
+  }
+  const updateFilteredRows = api => {
+    const filtered = [];
+    api.forEachNodeAfterFilterAndSort(node => filtered.push(node.data));
+    plotData.rows = filtered;
+    document.querySelector("#values-dialog-context").textContent = [
+      payload.software_name,
+      `${filtered.length} of ${rows.length} observations`,
+    ].filter(Boolean).join(" · ");
+    if (currentRunValuesTab === "plot" && currentPlotDraw) currentPlotDraw();
+  };
+  window.agGrid.createGrid(element, {
+    rowData: rows,
+    columnDefs: payload.columns.map(column => ({
+      field: column.key,
+      headerName: column.label,
+      headerClass: `ag-header-${column.kind}`,
+      filter: columnTypes[column.key] === "number" ? "agNumberColumnFilter" : "agTextColumnFilter",
+      floatingFilter: true,
+      cellDataType: columnTypes[column.key],
+      minWidth: 155,
+    })),
+    defaultColDef: {
+      sortable: true,
+      resizable: true,
+      filterParams: { buttons: ["reset", "apply"], closeOnApply: true },
+    },
+    animateRows: false,
+    onGridReady: event => updateFilteredRows(event.api),
+    onFilterChanged: event => updateFilteredRows(event.api),
+  });
+}
+
+function selectRunValuesTab(tab) {
+  currentRunValuesTab = tab;
+  const showValues = tab === "values";
+  document.querySelector("#values-tab").setAttribute("aria-selected", showValues);
+  document.querySelector("#plot-tab").setAttribute("aria-selected", !showValues);
+  const table = runValuesContent.querySelector(".run-values-grid");
+  const plot = runValuesContent.querySelector(".run-plot-section");
+  if (table) table.hidden = !showValues;
+  if (plot) plot.hidden = showValues;
+  runValuesContent.scrollTop = 0;
+  if (!showValues && currentPlotDraw) requestAnimationFrame(currentPlotDraw);
+}
+
+function plotSelect(labelText, values) {
+  const label = document.createElement("label");
+  label.className = "plot-control";
+  const text = document.createElement("span");
+  text.textContent = labelText;
+  const select = document.createElement("select");
+  values.forEach(({ value, label }) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    select.append(option);
+  });
+  label.append(text, select);
+  return { label, select };
+}
+
+function buildRunPlot(payload, plotData) {
+  const section = document.createElement("section");
+  section.className = "run-plot-section";
+  const heading = document.createElement("h3");
+  heading.textContent = "Plot values";
+  const parameters = payload.columns.filter(column => column.kind === "parameter");
+  const metrics = payload.columns.filter(column => column.kind === "metric");
+  const xAxis = plotSelect("X-axis parameter", parameters.map(column => ({
+    value: column.key, label: column.label,
+  })));
+  const yAxis = plotSelect("Y-axis metric", metrics.map(column => ({
+    value: column.key, label: column.label,
+  })));
+  const xScale = plotSelect("X scale", [
+    { value: "linear", label: "Linear" },
+    { value: "log", label: "Logarithmic" },
+  ]);
+  const yScale = plotSelect("Y scale", [
+    { value: "linear", label: "Linear" },
+    { value: "log", label: "Logarithmic" },
+  ]);
+  const controls = document.createElement("div");
+  controls.className = "plot-controls";
+  const xControls = document.createElement("fieldset");
+  const xLegend = document.createElement("legend");
+  xLegend.textContent = "X axis";
+  xControls.append(xLegend, xAxis.label, xScale.label);
+  const yControls = document.createElement("fieldset");
+  const yLegend = document.createElement("legend");
+  yLegend.textContent = "Y axis";
+  yControls.append(yLegend, yAxis.label, yScale.label);
+  controls.append(xControls, yControls);
+  const message = document.createElement("p");
+  message.className = "plot-message";
+  message.textContent = "Select an axis value and scale to update the plot.";
+  const chart = document.createElement("div");
+  chart.className = "run-plot";
+  section.append(heading, controls, message, chart);
+
+  const draw = () => {
+    if (!window.Plotly) {
+      message.textContent = "Plotly could not be loaded. Check the network connection and reload.";
+      return;
+    }
+    const xColumn = parameters.find(column => column.key === xAxis.select.value);
+    const yColumn = metrics.find(column => column.key === yAxis.select.value);
+    const pairs = plotData.rows.map(row => ({
+      x: row[xAxis.select.value] === null || row[xAxis.select.value] === "" ? NaN : Number(row[xAxis.select.value]),
+      y: row[yAxis.select.value] === null || row[yAxis.select.value] === "" ? NaN : Number(row[yAxis.select.value]),
+    })).filter(pair =>
+      Number.isFinite(pair.x) && Number.isFinite(pair.y) &&
+      (xScale.select.value !== "log" || pair.x > 0) &&
+      (yScale.select.value !== "log" || pair.y > 0)
+    ).sort((a, b) => a.x - b.x);
+
+    message.textContent = pairs.length
+      ? `${pairs.length} plotted from ${plotData.rows.length} filtered observations${pairs.length < plotData.rows.length ? ` (${plotData.rows.length - pairs.length} invalid for this scale)` : ""}`
+      : "No numeric observations are valid for this axis and scale combination.";
+    window.Plotly.react(chart, [{
+      x: pairs.map(pair => pair.x),
+      y: pairs.map(pair => pair.y),
+      type: "scatter",
+      mode: "lines+markers",
+      name: payload.software_name || "Run",
+      marker: { color: "#176b4a", size: 8 },
+      line: { color: "#176b4a", width: 2 },
+      hovertemplate: `${xColumn?.label || "x"}: %{x}<br>${yColumn?.label || "y"}: %{y}<extra></extra>`,
+    }], {
+      autosize: true,
+      margin: { l: 75, r: 24, t: 25, b: 70 },
+      paper_bgcolor: "#ffffff",
+      plot_bgcolor: "#fafcf9",
+      xaxis: { title: xColumn?.label, type: xScale.select.value, automargin: true },
+      yaxis: { title: yColumn?.label, type: yScale.select.value, automargin: true },
+      showlegend: false,
+      hovermode: "closest",
+    }, {
+      responsive: true,
+      displaylogo: false,
+      scrollZoom: true,
+      modeBarButtonsToRemove: ["lasso2d", "select2d"],
+      toImageButtonOptions: { filename: "benchmark-run-plot", format: "png" },
+    });
+  };
+  [xAxis.select, yAxis.select, xScale.select, yScale.select]
+    .forEach(select => select.addEventListener("change", draw));
+  section.draw = draw;
+  return section;
+}
+
+async function showRunValues(run, button) {
+  document.querySelector("#values-dialog-title").textContent = "Loading run values…";
+  document.querySelector("#values-dialog-context").textContent = run.software_name || "";
+  runValuesTabs.hidden = true;
+  currentPlotDraw = null;
+  currentRunValuesTab = "values";
+  runValuesContent.innerHTML = '<p class="dialog-state"><span class="spinner"></span> Running SPARQL query…</p>';
+  if (!runValuesDialog.open) runValuesDialog.showModal();
+  button.disabled = true;
+  try {
+    const response = await fetch(`/api/run-values?run_id=${encodeURIComponent(run.run_id)}`);
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || "Run values could not be loaded.");
+    renderRunValues(payload);
+    runValuesContent.scrollTop = 0;
+  } catch (error) {
+    const message = document.createElement("p");
+    message.className = "dialog-state error";
+    message.textContent = error.message;
+    runValuesContent.replaceChildren(message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function runValuesButton(run) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "icon-link icon-button";
+  button.title = "Query parameter and metric values";
+  button.setAttribute("aria-label", `Query values for ${run.software_name || "run"}`);
+  const icon = document.createElement("img");
+  icon.src = "/assets/icons/table.svg";
+  icon.alt = "";
+  button.append(icon);
+  button.addEventListener("click", () => showRunValues(run, button));
+  return button;
+}
+
 function renderBenchmarks() {
   const unique = new Map();
   state.runs.forEach(run => unique.set(run.benchmark_url || run.benchmark_repo, run));
   const benchmarks = [...unique.values()].sort((a, b) =>
     label(a.benchmark_repo).localeCompare(label(b.benchmark_repo))
   );
-  benchmarksBody.replaceChildren();
-  if (!benchmarks.length) {
-    const row = benchmarksBody.insertRow();
-    const cell = row.insertCell();
-    cell.colSpan = 4;
-    cell.className = "state";
-    cell.textContent = "No benchmarks are published yet.";
+  const options = {
+    rowData: benchmarks,
+    columnDefs: [
+      {
+        headerName: "Benchmark",
+        flex: 1,
+        minWidth: 240,
+        valueGetter: params => params.data.benchmark || label(params.data.benchmark_repo),
+        cellClass: "benchmark-name",
+      },
+      { headerName: "Details", width: 95, sortable: false, cellRenderer: params => detailsButton(params.data) },
+      { headerName: "GitHub", width: 95, sortable: false, cellRenderer: params => githubIconLink(params.data.benchmark_repo) },
+      { headerName: "RoHub", width: 95, sortable: false, cellRenderer: params => rohubIconLink(params.data.benchmark_url) },
+    ],
+    defaultColDef: { sortable: true, resizable: true },
+    domLayout: "autoHeight",
+    overlayNoRowsTemplate: "No benchmarks are published yet.",
+  };
+  if (benchmarkGridApi) {
+    benchmarkGridApi.setGridOption("rowData", benchmarks);
+  } else if (window.agGrid) {
+    benchmarksBody.replaceChildren();
+    benchmarkGridApi = window.agGrid.createGrid(benchmarksBody, options);
   }
-  benchmarks.forEach(benchmark => {
-    const row = benchmarksBody.insertRow();
-    const name = row.insertCell();
-    name.className = "benchmark-name";
-    name.textContent = benchmark.benchmark || label(benchmark.benchmark_repo);
-    row.insertCell().append(detailsButton(benchmark));
-    row.insertCell().append(githubIconLink(benchmark.benchmark_repo));
-    row.insertCell().append(rohubIconLink(benchmark.benchmark_url));
-  });
   document.querySelector("#benchmark-count").textContent = `${benchmarks.length} benchmarks`;
 }
 
-function render() {
-  const query = state.query.toLowerCase();
-  const rows = state.runs
-    .filter(run => Object.values(run).some(value => String(value || "").toLowerCase().includes(query)))
-    .sort((a, b) => String(a[state.sort] || "").localeCompare(String(b[state.sort] || "")) * state.direction);
+function softwareCell(run) {
+  const name = run.software_name || "Unknown";
+  return run.software_url ? link(run.software_url, name, "software-name") : document.createTextNode(name);
+}
 
-  body.replaceChildren();
-  if (!rows.length) {
-    const row = body.insertRow();
-    const cell = row.insertCell();
-    cell.colSpan = 5;
-    cell.className = "state";
-    cell.textContent = state.runs.length ? "No runs match your search." : "No runs are published yet.";
+function updateRunsCount() {
+  if (!runsGridApi) return;
+  let displayed = 0;
+  runsGridApi.forEachNodeAfterFilter(() => { displayed += 1; });
+  count.textContent = `${displayed} of ${state.runs.length} runs`;
+}
+
+function render() {
+  const options = {
+    rowData: state.runs,
+    columnDefs: [
+      { headerName: "Software", field: "software_name", minWidth: 170, flex: 1, cellRenderer: params => softwareCell(params.data) },
+      {
+        headerName: "Benchmark",
+        field: "benchmark_repo",
+        minWidth: 190,
+        flex: 1,
+        valueFormatter: params => label(params.value),
+        cellClass: "benchmark-name",
+      },
+      {
+        headerName: "Published",
+        field: "datePublished",
+        minWidth: 150,
+        valueFormatter: params => publishedDate(params.value),
+        cellClass: "published-date",
+      },
+      { headerName: "Values", width: 90, sortable: false, cellRenderer: params => runValuesButton(params.data) },
+      { headerName: "RoHub", width: 115, sortable: false, cellRenderer: params => link(params.data.run_id, "Open run ↗") },
+      {
+        headerName: "Named graph",
+        minWidth: 170,
+        sortable: false,
+        cellRenderer: params => link(params.data.graph, `Graph ${label(params.data.graph).slice(0, 8)}… ↗`, "mono"),
+      },
+    ],
+    defaultColDef: { sortable: true, resizable: true },
+    quickFilterText: state.query,
+    overlayNoRowsTemplate: "No runs are published yet.",
+    onGridReady: updateRunsCount,
+    onFilterChanged: updateRunsCount,
+  };
+  if (runsGridApi) {
+    runsGridApi.setGridOption("rowData", state.runs);
+    runsGridApi.setGridOption("quickFilterText", state.query);
+    updateRunsCount();
+  } else if (window.agGrid) {
+    body.replaceChildren();
+    runsGridApi = window.agGrid.createGrid(body, options);
+    updateRunsCount();
   }
-  rows.forEach(run => {
-    const row = body.insertRow();
-    const software = row.insertCell();
-    const badge = document.createElement("span");
-    badge.className = "badge";
-    badge.textContent = run.software_name || "Unknown";
-    if (run.software_url) {
-      const softwareLink = link(run.software_url, "");
-      softwareLink.className = "software-link";
-      softwareLink.replaceChildren(badge);
-      software.append(softwareLink);
-    } else {
-      software.append(badge);
-    }
-    const benchmark = row.insertCell();
-    benchmark.className = "benchmark-name";
-    benchmark.textContent = label(run.benchmark_repo);
-    const published = row.insertCell();
-    published.className = "published-date";
-    published.textContent = publishedDate(run.datePublished);
-    if (run.datePublished) published.title = run.datePublished;
-    row.insertCell().append(link(run.run_id, "Open run ↗"));
-    row.insertCell().append(link(run.graph, `Graph ${label(run.graph).slice(0, 8)}… ↗`, "mono"));
-  });
-  count.textContent = `${rows.length} of ${state.runs.length} runs`;
 }
 
 async function load(refresh = false) {
-  body.innerHTML = '<tr><td colspan="5" class="state"><span class="spinner"></span> Loading published runs…</td></tr>';
+  if (runsGridApi) runsGridApi.setGridOption("loading", true);
+  else body.innerHTML = '<div class="state"><span class="spinner"></span> Loading published runs…</div>';
   document.querySelector("#refresh").disabled = true;
   try {
     const response = await fetch(`/api/runs${refresh ? "?refresh=true" : ""}`);
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail || "The runs could not be loaded.");
+    if (!window.agGrid) throw new Error("AG Grid could not be loaded. Check the network connection and reload.");
     state.runs = payload.items;
     renderBenchmarks();
     updated.textContent = `Updated ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
     render();
+    if (runsGridApi) runsGridApi.setGridOption("loading", false);
   } catch (error) {
-    body.innerHTML = `<tr><td colspan="5" class="state error"></td></tr>`;
-    body.querySelector("td").textContent = error.message;
-    benchmarksBody.innerHTML = '<tr><td colspan="4" class="state error"></td></tr>';
-    benchmarksBody.querySelector("td").textContent = error.message;
+    if (runsGridApi) runsGridApi.destroy();
+    if (benchmarkGridApi) benchmarkGridApi.destroy();
+    runsGridApi = null;
+    benchmarkGridApi = null;
+    const runsError = document.createElement("div");
+    runsError.className = "state error";
+    runsError.textContent = error.message;
+    body.replaceChildren(runsError);
+    const benchmarksError = runsError.cloneNode(true);
+    benchmarksBody.replaceChildren(benchmarksError);
     document.querySelector("#benchmark-count").textContent = "Data unavailable";
     count.textContent = "Data unavailable";
   } finally {
@@ -186,16 +462,19 @@ async function load(refresh = false) {
   }
 }
 
-document.querySelector("#search").addEventListener("input", event => { state.query = event.target.value; render(); });
+document.querySelector("#search").addEventListener("input", event => {
+  state.query = event.target.value;
+  if (runsGridApi) runsGridApi.setGridOption("quickFilterText", state.query);
+});
 document.querySelector("#refresh").addEventListener("click", () => load(true));
 document.querySelector("#close-dialog").addEventListener("click", () => benchmarkDialog.close());
 benchmarkDialog.addEventListener("click", event => {
   if (event.target === benchmarkDialog) benchmarkDialog.close();
 });
-document.querySelectorAll("[data-sort]").forEach(button => button.addEventListener("click", () => {
-  const key = button.dataset.sort;
-  state.direction = state.sort === key ? -state.direction : 1;
-  state.sort = key;
-  render();
-}));
+document.querySelector("#close-values-dialog").addEventListener("click", () => runValuesDialog.close());
+document.querySelector("#values-tab").addEventListener("click", () => selectRunValuesTab("values"));
+document.querySelector("#plot-tab").addEventListener("click", () => selectRunValuesTab("plot"));
+runValuesDialog.addEventListener("click", event => {
+  if (event.target === runValuesDialog) runValuesDialog.close();
+});
 load();

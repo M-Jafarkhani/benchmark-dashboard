@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from .services import UpstreamError, load_runs
+from .services import RunNotFoundError, UpstreamError, load_runs, query_run_values
 
 FRONTEND = Path(__file__).resolve().parent.parent / "frontend"
 app = FastAPI(title="Semantic Benchmark Dashboard", version="0.1.0")
@@ -22,6 +22,16 @@ def runs(refresh: bool = Query(False, description="Bypass the five-minute cache"
     except UpstreamError as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
     return {"items": items, "count": len(items)}
+
+
+@app.get("/api/run-values")
+def run_values(run_id: str = Query(..., description="Published run IRI")):
+    try:
+        return query_run_values(run_id)
+    except RunNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except UpstreamError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
 
 
 @app.get("/", include_in_schema=False)

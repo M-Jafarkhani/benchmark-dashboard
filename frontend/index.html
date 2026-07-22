@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Explore published semantic benchmark runs.">
   <title>Benchmark runs</title>
-  <link rel="stylesheet" href="/assets/styles.css?v=4">
-  <script src="/assets/app.js?v=4" defer></script>
+  <link rel="stylesheet" href="/assets/styles.css?v=15">
+  <script src="https://cdn.plot.ly/plotly-3.5.1.min.js" charset="utf-8" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@36.0.1/dist/ag-grid-community.min.js" defer></script>
+  <script src="/assets/app.js?v=15" defer></script>
 </head>
 <body>
   <header class="hero">
     <div class="eyebrow">Semantic Benchmark</div>
-    <h1>Published runs, clearly compared.</h1>
     <p>Explore benchmark executions and follow their linked data back to the source.</p>
   </header>
   <main>
@@ -23,17 +24,7 @@
         </div>
         <span id="benchmark-count" class="section-count">Loading…</span>
       </div>
-      <div class="table-shell compact-table">
-        <table>
-          <thead><tr>
-            <th>Benchmark</th>
-            <th>Details</th>
-            <th>GitHub</th>
-            <th>RoHub</th>
-          </tr></thead>
-          <tbody id="benchmarks"><tr><td colspan="4" class="state">Loading benchmarks…</td></tr></tbody>
-        </table>
-      </div>
+      <div id="benchmarks" class="dashboard-grid benchmarks-grid"><div class="state">Loading benchmarks…</div></div>
     </section>
     <section class="section-block runs-section" aria-labelledby="runs-title">
       <div class="section-heading">
@@ -53,17 +44,8 @@
       <span id="count">Loading runs…</span>
       <span id="updated"></span>
     </div>
-    <section class="table-shell" aria-label="Benchmark runs">
-      <table>
-        <thead><tr>
-          <th><button data-sort="software_name">Software <span>↕</span></button></th>
-          <th><button data-sort="benchmark_repo">Benchmark <span>↕</span></button></th>
-          <th><button data-sort="datePublished">Published <span>↕</span></button></th>
-          <th>RoHub</th>
-          <th>Named graph</th>
-        </tr></thead>
-        <tbody id="runs"><tr><td colspan="5" class="state">Contacting RoHub…</td></tr></tbody>
-      </table>
+    <section aria-label="Benchmark runs">
+      <div id="runs" class="dashboard-grid runs-grid"><div class="state">Contacting RoHub…</div></div>
     </section>
     </section>
   </main>
@@ -83,6 +65,21 @@
       <h3>Metrics</h3>
       <div id="dialog-metrics"></div>
     </div>
+  </dialog>
+  <dialog id="run-values-dialog" class="values-dialog" aria-labelledby="values-dialog-title">
+    <div class="dialog-heading">
+      <div>
+        <div class="eyebrow dark">Run values</div>
+        <h2 id="values-dialog-title">Parameters and metrics</h2>
+        <p id="values-dialog-context" class="dialog-context"></p>
+      </div>
+      <button id="close-values-dialog" class="dialog-close" type="button" aria-label="Close dialog">×</button>
+    </div>
+    <div id="values-dialog-tabs" class="dialog-tabs" role="tablist" aria-label="Run data views" hidden>
+      <button id="values-tab" type="button" role="tab" aria-selected="true">Values</button>
+      <button id="plot-tab" type="button" role="tab" aria-selected="false">Plot</button>
+    </div>
+    <div id="values-dialog-content" class="values-content" aria-live="polite"></div>
   </dialog>
   <footer>Data sourced live from RoHub and zbMATH Open.</footer>
 </body>
