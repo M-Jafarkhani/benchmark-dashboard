@@ -1,0 +1,5 @@
+fastapi==0.116.1
+pandas==2.2.3
+rohub==1.2.1
+semantic-benchmark==0.1.0
+uvicorn[standard]==0.35.0

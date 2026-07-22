@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore published semantic benchmark runs.">
+  <title>Benchmark runs</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script src="/assets/app.js" defer></script>
+</head>
+<body>
+  <header class="hero">
+    <div class="eyebrow">Semantic Benchmark</div>
+    <h1>Published runs, clearly compared.</h1>
+    <p>Explore benchmark executions and follow their linked data back to the source.</p>
+  </header>
+  <main>
+    <section class="section-block" aria-labelledby="benchmarks-title">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow dark">Catalog</div>
+          <h2 id="benchmarks-title">Benchmarks</h2>
+        </div>
+        <span id="benchmark-count" class="section-count">Loading…</span>
+      </div>
+      <div class="table-shell compact-table">
+        <table>
+          <thead><tr>
+            <th>Benchmark</th>
+            <th>GitHub</th>
+            <th>RoHub</th>
+          </tr></thead>
+          <tbody id="benchmarks"><tr><td colspan="3" class="state">Loading benchmarks…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+    <section class="section-block runs-section" aria-labelledby="runs-title">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow dark">Results</div>
+          <h2 id="runs-title">Published runs</h2>
+        </div>
+      </div>
+    <section class="toolbar" aria-label="Run controls">
+      <label class="search">
+        <span class="sr-only">Search runs</span>
+        <input id="search" type="search" placeholder="Search software or benchmark…" autocomplete="off">
+      </label>
+      <button id="refresh" type="button">Refresh data</button>
+    </section>
+    <div class="summary" aria-live="polite">
+      <span id="count">Loading runs…</span>
+      <span id="updated"></span>
+    </div>
+    <section class="table-shell" aria-label="Benchmark runs">
+      <table>
+        <thead><tr>
+          <th><button data-sort="software_name">Software <span>↕</span></button></th>
+          <th><button data-sort="benchmark_repo">Benchmark <span>↕</span></button></th>
+          <th><button data-sort="datePublished">Published <span>↕</span></button></th>
+          <th>Open RO</th>
+          <th>Named graph</th>
+        </tr></thead>
+        <tbody id="runs"><tr><td colspan="5" class="state">Contacting RoHub…</td></tr></tbody>
+      </table>
+    </section>
+    </section>
+  </main>
+  <footer>Data sourced live from RoHub and zbMATH Open.</footer>
+</body>
+</html>

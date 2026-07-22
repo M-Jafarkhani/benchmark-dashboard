@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: semantic-benchmark-dashboard
+    runtime: docker
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
