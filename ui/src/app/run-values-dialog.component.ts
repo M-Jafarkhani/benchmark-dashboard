@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, effect, ElementRef, inject, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, effect, ElementRef, inject, OnDestroy, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { AgGridAngular } from 'ag-grid-angular';
@@ -20,7 +20,8 @@ interface SelectOption { label: string; value: string; }
   imports: [AgGridAngular, DialogModule, FormsModule, ProgressSpinnerModule, SelectModule, TabsModule],
   template: `
     <p-dialog [(visible)]="visible" [modal]="true" [maximizable]="true"
-      [style]="{ width: 'min(1120px, 96vw)' }" [contentStyle]="{ height: 'min(680px, 76vh)' }">
+      [style]="{ width: 'min(1120px, 96vw)' }" [contentStyle]="{ height: 'min(680px, 76vh)' }"
+      (onMaximize)="maximizeChanged($event)">
       <ng-template #header>
         <div>
           <span class="eyebrow">Run values</span>
@@ -46,7 +47,7 @@ interface SelectOption { label: string; value: string; }
                 (filterChanged)="filterChanged($event)" />
             </p-tabpanel>
             <p-tabpanel value="plot">
-              <section class="plot-panel">
+              <section class="plot-panel" [class.maximized]="dialogMaximized">
                 <div class="axis-groups">
                   <fieldset>
                     <legend>X axis</legend>
@@ -83,14 +84,25 @@ interface SelectOption { label: string; value: string; }
     p-select { width:100%; }
     .plot-message { min-height:1.25rem; color:var(--muted); font-size:.78rem; }
     .plot { width:100%; height:450px; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .plot-panel.maximized .plot { height:max(450px, calc(100vh - 310px)); }
     @media(max-width:700px) { .axis-groups { grid-template-columns:1fr; } }
   `],
 })
-export class RunValuesDialogComponent {
+export class RunValuesDialogComponent implements OnDestroy {
   private readonly api = inject(BenchmarkApi);
   private readonly changeDetector = inject(ChangeDetectorRef);
   private readonly theme = inject(ThemeService);
-  @ViewChild('plot') plotElement?: ElementRef<HTMLDivElement>;
+  private plotElement?: ElementRef<HTMLDivElement>;
+  private plotResizeObserver?: ResizeObserver;
+
+  @ViewChild('plot') set plotContainer(element: ElementRef<HTMLDivElement> | undefined) {
+    this.plotResizeObserver?.disconnect();
+    this.plotElement = element;
+    if (element) {
+      this.plotResizeObserver = new ResizeObserver(() => this.resizePlot());
+      this.plotResizeObserver.observe(element.nativeElement);
+    }
+  }
 
   visible = false;
   loading = false;
@@ -111,6 +123,7 @@ export class RunValuesDialogComponent {
   xScale = 'linear';
   yScale = 'linear';
   plotMessage = '';
+  dialogMaximized = false;
   private gridApi?: GridApi;
 
   constructor() {
@@ -199,6 +212,18 @@ export class RunValuesDialogComponent {
     if (this.tab === 'plot') window.setTimeout(() => this.drawPlot());
   }
 
+  maximizeChanged(event: { maximized?: boolean }): void {
+    this.dialogMaximized = Boolean(event.maximized);
+    window.setTimeout(() => this.resizePlot(), 150);
+  }
+
+  private async resizePlot(): Promise<void> {
+    const element = this.plotElement?.nativeElement as (HTMLDivElement & { _fullLayout?: unknown }) | undefined;
+    if (!element?._fullLayout) return;
+    const Plotly = (await import('plotly.js-dist-min')).default;
+    window.requestAnimationFrame(() => Plotly.Plots.resize(element));
+  }
+
   async drawPlot(): Promise<void> {
     if (!this.plotElement || !this.payload || !this.xKey || !this.yKey) return;
     const xColumn = this.payload.columns.find(column => column.key === this.xKey);
@@ -227,4 +252,6 @@ export class RunValuesDialogComponent {
     }, { responsive: true, displaylogo: false, scrollZoom: true, modeBarButtonsToRemove: ['lasso2d', 'select2d'] });
     this.changeDetector.markForCheck();
   }
+
+  ngOnDestroy(): void { this.plotResizeObserver?.disconnect(); }
 }
