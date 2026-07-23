@@ -1,10 +1,13 @@
 <header class="hero">
+  <div class="brand">
+    <img class="brand-icon" src="assets/icon.png" alt="" />
+    <div class="eyebrow">Simulation Benchmarks</div>
+  </div>
   <label class="theme-switch">
     <i class="pi" [class.pi-sun]="!theme.dark()" [class.pi-moon]="theme.dark()"></i>
     <span>{{ theme.dark() ? 'Dark' : 'Light' }} theme</span>
     <p-toggleswitch [ngModel]="theme.dark()" (ngModelChange)="theme.setDark($event)" ariaLabel="Toggle dark theme" />
   </label>
-  <div class="eyebrow">Semantic Benchmark</div>
 </header>
 
 <main>
