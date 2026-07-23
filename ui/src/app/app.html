@@ -2,99 +2,21 @@
   <label class="theme-switch">
     <i class="pi" [class.pi-sun]="!theme.dark()" [class.pi-moon]="theme.dark()"></i>
     <span>{{ theme.dark() ? 'Dark' : 'Light' }} theme</span>
-    <p-toggleswitch
-      [ngModel]="theme.dark()"
-      (ngModelChange)="theme.setDark($event)"
-      ariaLabel="Toggle dark theme"
-    />
+    <p-toggleswitch [ngModel]="theme.dark()" (ngModelChange)="theme.setDark($event)" ariaLabel="Toggle dark theme" />
   </label>
   <div class="eyebrow">Semantic Benchmark</div>
-  <p>Explore benchmark executions and follow their linked data back to the source.</p>
 </header>
 
 <main>
-  @if (error) {
-    <div class="state error">{{ error }}</div>
-  } @else {
-    <section class="section-block">
-      <div class="section-heading">
-        <div><div class="eyebrow dark">Benchmarks</div></div>
-        <span>{{ benchmarks.length }} benchmarks</span>
-      </div>
-      @if (loading) {
-        <div class="state"><p-progress-spinner strokeWidth="4" /></div>
-      } @else {
-        <ag-grid-angular
-          class="benchmark-grid"
-          [rowData]="benchmarks"
-          [columnDefs]="benchmarkColumns"
-          [defaultColDef]="defaultColDef"
-          domLayout="autoHeight"
-        />
-      }
-    </section>
-
-    <section class="section-block">
-      <div class="section-heading">
-        <div><div class="eyebrow dark">Published runs</div></div>
-      </div>
-      <div class="toolbar">
-        <span class="search"
-          ><i class="pi pi-search"></i
-          ><input
-            #query
-            pInputText
-            type="search"
-            placeholder="Search software or benchmark…"
-            (input)="search(query.value)"
-        /></span>
-        <p-button
-          [label]="
-            selectedRuns.length === 1
-              ? 'View selected run'
-              : selectedRuns.length > 1
-                ? 'Compare selected (' + selectedRuns.length + ')'
-                : 'View / compare selected'
-          "
-          icon="pi pi-chart-line"
-          [outlined]="true"
-          [disabled]="!canCompare"
-          [title]="compareHint"
-          (onClick)="compare()"
-        />
-        <p-button
-          label="Refresh data"
-          icon="pi pi-refresh"
-          [loading]="loading"
-          (onClick)="load(true)"
-        />
-      </div>
-      <div class="summary">
-        <span>{{ displayedRuns }} of {{ runs.length }} runs</span><span>Updated {{ updated }}</span>
-      </div>
-      <ag-grid-angular
-        class="runs-grid"
-        [rowData]="runs"
-        [columnDefs]="runColumns"
-        [defaultColDef]="runDefaultColDef"
-        [pagination]="true"
-        [paginationPageSize]="10"
-        [paginationPageSizeSelector]="[10, 25, 50]"
-        [rowSelection]="{
-          mode: 'multiRow',
-          checkboxes: true,
-          headerCheckbox: true,
-          enableClickSelection: false,
-        }"
-        [selectionColumnDef]="{ width: 48, pinned: 'left', sortable: false, resizable: false }"
-        [getRowId]="getRowId"
-        (gridReady)="runGridReady($event)"
-        (filterChanged)="filterChanged()"
-        (selectionChanged)="selectionChanged($event)"
-      />
-    </section>
+  @if (error) { <div class="state error">{{ error }}</div> }
+  @else {
+    <app-benchmark-catalog [runs]="runs" [loading]="loading" (selectionChange)="selectBenchmark($event)" />
+    <app-published-runs [runs]="runs" [loading]="loading" [updated]="updated"
+      [benchmarkUrl]="selectedBenchmarkUrl" [benchmarkName]="selectedBenchmarkName"
+      (refreshRequested)="load(true)" (analysisRequested)="openAnalysis($event)"
+      (clearBenchmarkRequested)="clearBenchmarkFilter()" />
   }
 </main>
 
-<app-run-values-dialog />
+<app-run-analysis-dialog />
 <app-sparql-log />

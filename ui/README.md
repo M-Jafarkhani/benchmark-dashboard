@@ -12,6 +12,19 @@ ng serve
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
+## Application structure
+
+The UI is organized by responsibility:
+
+- `src/app/core` contains application-wide models and services.
+- `src/app/shared` contains reusable grid setup, renderers, and formatting utilities.
+- `src/app/features/benchmark-catalog` owns benchmark selection.
+- `src/app/features/published-runs` owns run filtering, pagination, and comparison selection.
+- `src/app/features/run-analysis` separates data loading, the values grid, Plotly rendering, and dialog orchestration.
+- `src/app/features/sparql-log` contains the live query log.
+
+The root `App` component only loads the run collection and coordinates feature events. New domain behavior should live in the relevant feature rather than in the root component.
+
 ## Code scaffolding
 
 Angular CLI includes powerful code scaffolding tools. To generate a new component, run:

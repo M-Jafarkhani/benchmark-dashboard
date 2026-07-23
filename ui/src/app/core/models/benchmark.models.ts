@@ -6,6 +6,7 @@ export interface Run {
   software_name: string | null;
   software_url: string | null;
   datePublished: string | null;
+  version: string | null;
   benchmark: string;
   parameters: string[];
   metrics: string[];

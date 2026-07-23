@@ -3,8 +3,8 @@ import { DatePipe } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
-import { BenchmarkApi } from './benchmark-api.service';
-import { SparqlEntry } from './models';
+import { BenchmarkApi } from '../../core/services/benchmark-api.service';
+import { SparqlEntry } from '../../core/models/benchmark.models';
 
 @Component({
   selector: 'app-sparql-log',

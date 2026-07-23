@@ -29,12 +29,13 @@ PREFIX schema: <http://schema.org/>
 PREFIX m4i: <http://w3id.org/nfdi4ing/metadata4ing#>
 PREFIX prov: <http://www.w3.org/ns/prov#>
 
-SELECT DISTINCT ?run_id ?benchmark_url ?benchmark_repo ?software_url ?datePublished
+SELECT DISTINCT ?run_id ?benchmark_url ?benchmark_repo ?software_url ?datePublished ?version
 WHERE {
     ?run_id m4i:investigates ?benchmark_repo .
     ?run_id prov:used ?software_url .
-    ?benchmark_url schemas:codeRepository ?benchmark_repo .
     ?run_id schema:datePublished ?datePublished .
+    ?benchmark_url schemas:codeRepository ?benchmark_repo .
+    ?benchmark_url schemas:version ?version .
 }
 """
 
@@ -316,6 +317,7 @@ def load_runs(*, force: bool = False) -> list[dict[str, Any]]:
                 "software_name": names.get(row.get("software_url")),
                 "software_url": row.get("software_url"),
                 "datePublished": row.get("datePublished"),
+                "version": row.get("version"),
                 **benchmark_metadata.get(
                     row.get("benchmark_url"),
                     {"benchmark": "", "parameters": [], "metrics": []},

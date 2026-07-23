@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { Run, RunValues, SparqlEntry } from './models';
+import { Run, RunValues, SparqlEntry } from '../models/benchmark.models';
 
 @Injectable({ providedIn: 'root' })
 export class BenchmarkApi {

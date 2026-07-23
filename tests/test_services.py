@@ -21,7 +21,7 @@ class RunsServiceTests(unittest.TestCase):
     @patch("app.services._sparql")
     def test_load_runs_matches_notebook_shape(self, sparql, _metadata, _name):
         sparql.side_effect = [
-            [{"run_id": "run:1", "benchmark_url": "https://ro/1", "benchmark_repo": "https://repo/1", "software_url": "https://zbmath.org/software/1", "datePublished": "2026-07-22"}],
+            [{"run_id": "run:1", "benchmark_url": "https://ro/1", "benchmark_repo": "https://repo/1", "software_url": "https://zbmath.org/software/1", "datePublished": "2026-07-22", "version": "1.2.0"}],
             [{"run_id": "run:1", "graph": "https://graph/1"}],
         ]
         self.assertEqual(services.load_runs(), [{
@@ -32,6 +32,7 @@ class RunsServiceTests(unittest.TestCase):
             "software_name": "DuMuX",
             "software_url": "https://zbmath.org/software/1",
             "datePublished": "2026-07-22",
+            "version": "1.2.0",
             "benchmark": "Flow benchmark",
             "parameters": ["grid cells"],
             "metrics": ["L2 error"],
