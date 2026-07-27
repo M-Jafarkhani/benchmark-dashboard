@@ -4,7 +4,7 @@ import { ColDef, ICellRendererParams, SelectionChangedEvent } from 'ag-grid-comm
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { Run } from '../../core/models/benchmark.models';
-import { iconLink } from '../../shared/utils/grid-cell-renderers';
+import { imageLink } from '../../shared/utils/grid-cell-renderers';
 import { resourceLabel } from '../../shared/utils/display-formatters';
 
 @Component({
@@ -20,19 +20,89 @@ export class BenchmarkCatalogComponent {
   readonly selectionChange = output<Run | null>();
   @ViewChild(AgGridAngular) grid?: AgGridAngular<Run>;
 
-  readonly benchmarks = computed(() => [...new Map(this.runs().map(run => [run.benchmark_url || run.benchmark_repo, run])).values()]);
+  readonly benchmarks = computed(() => [
+    ...new Map(this.runs().map((run) => [run.benchmark_url || run.benchmark_repo, run])).values(),
+  ]);
   readonly defaultColDef: ColDef = { sortable: true, resizable: true };
-  readonly getRowId = (params: { data: Run }) => params.data.benchmark_url || params.data.benchmark_repo;
+  readonly getRowId = (params: { data: Run }) =>
+    params.data.benchmark_url || params.data.benchmark_repo;
   readonly columns: ColDef<Run>[] = [
-    { headerName: 'Benchmark', flex: 1, minWidth: 240, valueGetter: params => params.data?.benchmark || resourceLabel(params.data?.benchmark_repo), cellClass: 'benchmark-name' },
-    { headerName: 'Version', field: 'version', minWidth: 120, width: 140 },
-    { headerName: 'GitHub', width: 95, sortable: false, cellRenderer: (params: ICellRendererParams<Run>) => iconLink(params.data?.benchmark_repo, 'pi-github', 'Open GitHub repository') },
-    { headerName: 'RoHub', width: 95, sortable: false, cellRenderer: (params: ICellRendererParams<Run>) => iconLink(params.data?.benchmark_url, 'pi-external-link', 'Open benchmark in RoHub') },
+    {
+      headerName: 'Benchmark',
+      flex: 1,
+      minWidth: 240,
+      valueGetter: (params) => params.data?.benchmark || resourceLabel(params.data?.benchmark_repo),
+      cellClass: 'benchmark-name',
+    },
+    {
+      headerName: 'Version',
+      field: 'version',
+      minWidth: 120,
+      width: 140,
+      cellClass: 'centered-column',
+      headerClass: 'centered-column-header',
+    },
+    {
+      headerName: 'GitHub',
+      width: 95,
+      sortable: false,
+      cellClass: 'centered-column',
+      headerClass: 'centered-column-header',
+      cellRenderer: (params: ICellRendererParams<Run>) =>
+        imageLink(
+          params.data?.benchmark_repo,
+          'assets/github.svg',
+          'Open GitHub repository',
+          'GitHub',
+        ),
+    },
+    {
+      headerName: 'RoHub',
+      width: 95,
+      sortable: false,
+      cellClass: 'centered-column',
+      headerClass: 'centered-column-header',
+      cellRenderer: (params: ICellRendererParams<Run>) =>
+        imageLink(
+          params.data?.benchmark_url,
+          'assets/rohub.svg',
+          'Open benchmark in RoHub',
+          'RoHub',
+          'rohub-action',
+        ),
+    },
+    {
+      headerName: 'Jupyter',
+      width: 100,
+      sortable: false,
+      cellClass: 'centered-column',
+      headerClass: 'centered-column-header',
+      cellRenderer: (params: ICellRendererParams<Run>) =>
+        imageLink(
+          this.jupyterUrl(params.data?.benchmark_repo),
+          'assets/jupyter.svg',
+          'Open repository in Jupyter',
+          'Jupyter',
+        ),
+    },
   ];
+
+  private jupyterUrl(repository?: string | null): string | null {
+    const repositoryName = repository
+      ?.replace(/\/$/, '')
+      .split('/')
+      .at(-1)
+      ?.replace(/\.git$/, '');
+    return repositoryName
+      ? `https://hub.nfdi-jupyter.de/v2/gh/Simulation-Benchmarks/${encodeURIComponent(repositoryName)}/HEAD`
+      : null;
+  }
 
   selectionChanged(event: SelectionChangedEvent<Run>): void {
     this.selectionChange.emit(event.api.getSelectedRows()[0] || null);
   }
 
-  clearSelection(): void { this.grid?.api.deselectAll(); }
+  clearSelection(): void {
+    this.grid?.api.deselectAll();
+  }
 }

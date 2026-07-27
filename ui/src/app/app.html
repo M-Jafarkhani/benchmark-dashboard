@@ -6,18 +6,33 @@
   <label class="theme-switch">
     <i class="pi" [class.pi-sun]="!theme.dark()" [class.pi-moon]="theme.dark()"></i>
     <span>{{ theme.dark() ? 'Dark' : 'Light' }} theme</span>
-    <p-toggleswitch [ngModel]="theme.dark()" (ngModelChange)="theme.setDark($event)" ariaLabel="Toggle dark theme" />
+    <p-toggleswitch
+      [ngModel]="theme.dark()"
+      (ngModelChange)="theme.setDark($event)"
+      ariaLabel="Toggle dark theme"
+    />
   </label>
 </header>
 
 <main>
-  @if (error) { <div class="state error">{{ error }}</div> }
-  @else {
-    <app-benchmark-catalog [runs]="runs" [loading]="loading" (selectionChange)="selectBenchmark($event)" />
-    <app-published-runs [runs]="runs" [loading]="loading" [updated]="updated"
-      [benchmarkUrl]="selectedBenchmarkUrl" [benchmarkName]="selectedBenchmarkName"
-      (refreshRequested)="load(true)" (analysisRequested)="openAnalysis($event)"
-      (clearBenchmarkRequested)="clearBenchmarkFilter()" />
+  @if (error) {
+    <div class="state error">{{ error }}</div>
+  } @else {
+    <app-benchmark-catalog
+      [runs]="runs"
+      [loading]="loading"
+      (selectionChange)="selectBenchmark($event)"
+    />
+    <app-published-runs
+      [runs]="runs"
+      [loading]="loading"
+      [updated]="updated"
+      [benchmarkUrl]="selectedBenchmarkUrl"
+      [benchmarkName]="selectedBenchmarkName"
+      (refreshRequested)="load(true)"
+      (analysisRequested)="openAnalysis($event)"
+      (clearBenchmarkRequested)="clearBenchmarkFilter()"
+    />
   }
 </main>
 

@@ -4,12 +4,21 @@
     <span>{{ benchmarks().length }} benchmarks</span>
   </div>
   <div class="grid-loading-wrapper">
-    <ag-grid-angular class="benchmark-grid" [rowData]="benchmarks()" [columnDefs]="columns"
-      [defaultColDef]="defaultColDef" [rowSelection]="{ mode: 'singleRow', checkboxes: true, enableClickSelection: true }"
+    <ag-grid-angular
+      class="benchmark-grid"
+      [rowData]="benchmarks()"
+      [columnDefs]="columns"
+      [defaultColDef]="defaultColDef"
+      [rowSelection]="{ mode: 'singleRow', checkboxes: true, enableClickSelection: true }"
       [selectionColumnDef]="{ width: 48, pinned: 'left', sortable: false, resizable: false }"
-      [getRowId]="getRowId" (selectionChanged)="selectionChanged($event)" domLayout="autoHeight" />
+      [getRowId]="getRowId"
+      (selectionChanged)="selectionChanged($event)"
+      domLayout="autoHeight"
+    />
     @if (loading()) {
-      <div class="grid-loading-overlay"><p-progress-spinner strokeWidth="4" ariaLabel="Loading benchmarks" /></div>
+      <div class="grid-loading-overlay">
+        <p-progress-spinner strokeWidth="4" ariaLabel="Loading benchmarks" />
+      </div>
     }
   </div>
 </section>

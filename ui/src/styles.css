@@ -1,4 +1,4 @@
-@import "primeicons/primeicons.css";
+@import 'primeicons/primeicons.css';
 
 :root {
   color-scheme: light;
@@ -33,7 +33,9 @@ body {
   margin: 0;
   background: var(--app-bg);
   color: var(--text);
-  transition: background .2s, color .2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 a {

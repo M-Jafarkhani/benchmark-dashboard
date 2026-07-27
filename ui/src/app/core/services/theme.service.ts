@@ -6,7 +6,9 @@ export class ThemeService {
   private readonly document = inject(DOCUMENT);
   readonly dark = signal(this.initialPreference());
 
-  constructor() { this.apply(this.dark()); }
+  constructor() {
+    this.apply(this.dark());
+  }
 
   setDark(enabled: boolean): void {
     this.dark.set(enabled);

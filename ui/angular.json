@@ -53,11 +53,14 @@
                 "glob": "**/*",
                 "input": "src/app/assets",
                 "output": "assets"
+              },
+              {
+                "glob": "**/*",
+                "input": "assets",
+                "output": "assets"
               }
             ],
-            "styles": [
-              "src/styles.css"
-            ]
+            "styles": ["src/styles.css"]
           },
           "configurations": {
             "production": {

@@ -62,18 +62,22 @@ def _start_sparql_log(query: str) -> int:
     with _sparql_log_lock:
         _sparql_log_sequence += 1
         identifier = _sparql_log_sequence
-        _sparql_log.appendleft({
-            "id": identifier,
-            "started_at": datetime.now(timezone.utc).isoformat(),
-            "query": query.strip(),
-            "status": "running",
-            "duration_ms": None,
-            "error": None,
-        })
+        _sparql_log.appendleft(
+            {
+                "id": identifier,
+                "started_at": datetime.now(timezone.utc).isoformat(),
+                "query": query.strip(),
+                "status": "running",
+                "duration_ms": None,
+                "error": None,
+            }
+        )
         return identifier
 
 
-def _finish_sparql_log(identifier: int, started: float, error: Exception | None = None) -> None:
+def _finish_sparql_log(
+    identifier: int, started: float, error: Exception | None = None
+) -> None:
     with _sparql_log_lock:
         entry = next((item for item in _sparql_log if item["id"] == identifier), None)
         if entry is not None:
@@ -191,7 +195,11 @@ def _download_benchmark_graph(benchmark_url: str) -> Graph:
 
 def _labels(graph: Graph, subjects) -> list[str]:
     return sorted(
-        {str(label) for subject in subjects for label in graph.objects(subject, RDFS.label)},
+        {
+            str(label)
+            for subject in subjects
+            for label in graph.objects(subject, RDFS.label)
+        },
         key=str.casefold,
     )
 
@@ -297,16 +305,18 @@ def load_runs(*, force: bool = False) -> list[dict[str, Any]]:
         graphs = _sparql(_graph_query(run_ids)) if run_ids else []
         graph_by_run = {row["run_id"]: row.get("graph") for row in graphs}
 
-        software_urls = sorted({row["software_url"] for row in rows if row.get("software_url")})
+        software_urls = sorted(
+            {row["software_url"] for row in rows if row.get("software_url")}
+        )
         with ThreadPoolExecutor(max_workers=min(8, len(software_urls) or 1)) as pool:
             names = dict(zip(software_urls, pool.map(_software_name, software_urls)))
 
-        benchmark_urls = sorted({row["benchmark_url"] for row in rows if row.get("benchmark_url")})
+        benchmark_urls = sorted(
+            {row["benchmark_url"] for row in rows if row.get("benchmark_url")}
+        )
         # RoHub authentication is process-global, so mirror the notebook's
         # sequential downloads instead of logging in from concurrent threads.
-        benchmark_metadata = {
-            url: _benchmark_metadata(url) for url in benchmark_urls
-        }
+        benchmark_metadata = {url: _benchmark_metadata(url) for url in benchmark_urls}
 
         result = [
             {
@@ -325,6 +335,8 @@ def load_runs(*, force: bool = False) -> list[dict[str, Any]]:
             }
             for row in rows
         ]
-        result.sort(key=lambda row: (row["benchmark_repo"] or "", row["software_name"] or ""))
+        result.sort(
+            key=lambda row: (row["benchmark_repo"] or "", row["software_name"] or "")
+        )
         _cache = (time.monotonic(), result)
         return result

@@ -1,27 +1,74 @@
 <section class="section-block">
   <div class="section-heading"><div class="eyebrow">Published runs</div></div>
   <div class="toolbar">
-    <span class="search"><i class="pi pi-search"></i><input #query pInputText type="search"
-      placeholder="Search software or benchmark…" (input)="search(query.value)" /></span>
-    <p-button [label]="selectedRuns.length > 0 ? 'Compare selected (' + selectedRuns.length + ')' : 'Compare selected'"
-      icon="pi pi-chart-line" [outlined]="true" [disabled]="!canCompare" [title]="compareHint" (onClick)="compare()" />
-    <p-button label="Refresh data" icon="pi pi-refresh" [loading]="loading()" (onClick)="refreshRequested.emit()" />
+    <span class="search"
+      ><i class="pi pi-search"></i
+      ><input
+        #query
+        pInputText
+        type="search"
+        placeholder="Search software or benchmark…"
+        (input)="search(query.value)"
+    /></span>
+    <p-button
+      [label]="
+        selectedRuns.length > 0
+          ? 'Compare selected (' + selectedRuns.length + ')'
+          : 'Compare selected'
+      "
+      icon="pi pi-chart-line"
+      [outlined]="true"
+      [disabled]="!canCompare"
+      [title]="compareHint"
+      (onClick)="compare()"
+    />
+    <p-button
+      label="Refresh data"
+      icon="pi pi-refresh"
+      [loading]="loading()"
+      (onClick)="refreshRequested.emit()"
+    />
   </div>
   <div class="summary">
-    <span>{{ displayedRuns }} of {{ runs().length }} runs
-      @if (benchmarkName()) { · Benchmark: <strong>{{ benchmarkName() }}</strong>
-        <button class="clear-filter" type="button" (click)="clearBenchmarkRequested.emit()">Clear</button> }
+    <span
+      >{{ displayedRuns }} of {{ runs().length }} runs
+      @if (benchmarkName()) {
+        · Benchmark: <strong>{{ benchmarkName() }}</strong>
+        <button class="clear-filter" type="button" (click)="clearBenchmarkRequested.emit()">
+          Clear
+        </button>
+      }
     </span>
     <span>Updated {{ updated() }}</span>
   </div>
   <div class="grid-loading-wrapper">
-    <ag-grid-angular class="runs-grid" [rowData]="runs()" [columnDefs]="columns" [defaultColDef]="defaultColDef"
-      [pagination]="true" [paginationPageSize]="10" [paginationPageSizeSelector]="[10,25,50]"
-      [rowSelection]="{ mode:'multiRow', checkboxes:true, headerCheckbox:true, enableClickSelection:false }"
-      [selectionColumnDef]="{ width:48, pinned:'left', sortable:false, resizable:false }" [getRowId]="getRowId"
-      [isExternalFilterPresent]="isBenchmarkFilterPresent" [doesExternalFilterPass]="doesBenchmarkFilterPass"
-      (gridReady)="gridReady($event)" (filterChanged)="applyBenchmarkFilter()" (selectionChanged)="selectionChanged($event)"
-      (rowClicked)="openSingle($event)" />
-    @if (loading()) { <div class="grid-loading-overlay"><p-progress-spinner strokeWidth="4" ariaLabel="Loading published runs" /></div> }
+    <ag-grid-angular
+      class="runs-grid"
+      [rowData]="runs()"
+      [columnDefs]="columns"
+      [defaultColDef]="defaultColDef"
+      [pagination]="true"
+      [paginationPageSize]="10"
+      [paginationPageSizeSelector]="[10, 25, 50]"
+      [rowSelection]="{
+        mode: 'multiRow',
+        checkboxes: true,
+        headerCheckbox: true,
+        enableClickSelection: false,
+      }"
+      [selectionColumnDef]="{ width: 48, pinned: 'left', sortable: false, resizable: false }"
+      [getRowId]="getRowId"
+      [isExternalFilterPresent]="isBenchmarkFilterPresent"
+      [doesExternalFilterPass]="doesBenchmarkFilterPass"
+      (gridReady)="gridReady($event)"
+      (filterChanged)="applyBenchmarkFilter()"
+      (selectionChanged)="selectionChanged($event)"
+      (rowClicked)="openSingle($event)"
+    />
+    @if (loading()) {
+      <div class="grid-loading-overlay">
+        <p-progress-spinner strokeWidth="4" ariaLabel="Loading published runs" />
+      </div>
+    }
   </div>
 </section>

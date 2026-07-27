@@ -9,7 +9,12 @@ export function formatPublishedDate(value?: string | null): string {
   const date = new Date(dateOnly ? `${value}T00:00:00Z` : value);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat(undefined, {
-    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
-    timeZoneName: 'short', ...(dateOnly ? { timeZone: 'UTC' } : {}),
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZoneName: 'short',
+    ...(dateOnly ? { timeZone: 'UTC' } : {}),
   }).format(date);
 }

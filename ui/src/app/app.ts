@@ -15,7 +15,14 @@ import { resourceLabel } from './shared/utils/display-formatters';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [BenchmarkCatalogComponent, FormsModule, PublishedRunsComponent, RunAnalysisDialogComponent, SparqlLogComponent, ToggleSwitchModule],
+  imports: [
+    BenchmarkCatalogComponent,
+    FormsModule,
+    PublishedRunsComponent,
+    RunAnalysisDialogComponent,
+    SparqlLogComponent,
+    ToggleSwitchModule,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
@@ -33,19 +40,21 @@ export class App implements OnInit {
   error = '';
   updated = '';
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void {
+    this.load();
+  }
 
   load(refresh = false): void {
     this.loading = true;
     this.error = '';
     this.api.runs(refresh).subscribe({
-      next: response => {
+      next: (response) => {
         this.runs = response.items;
-        this.updated = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+        this.updated = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         this.loading = false;
         this.changeDetector.markForCheck();
       },
-      error: error => {
+      error: (error) => {
         this.error = error.error?.detail || 'The runs could not be loaded.';
         this.loading = false;
         this.changeDetector.markForCheck();
@@ -55,7 +64,9 @@ export class App implements OnInit {
 
   selectBenchmark(benchmark: Run | null): void {
     this.selectedBenchmarkUrl = benchmark?.benchmark_url || '';
-    this.selectedBenchmarkName = benchmark ? benchmark.benchmark || resourceLabel(benchmark.benchmark_repo) : '';
+    this.selectedBenchmarkName = benchmark
+      ? benchmark.benchmark || resourceLabel(benchmark.benchmark_repo)
+      : '';
   }
 
   clearBenchmarkFilter(): void {
@@ -64,5 +75,7 @@ export class App implements OnInit {
     this.selectedBenchmarkName = '';
   }
 
-  openAnalysis(runs: Run[]): void { this.analysisDialog?.open(runs); }
+  openAnalysis(runs: Run[]): void {
+    this.analysisDialog?.open(runs);
+  }
 }
