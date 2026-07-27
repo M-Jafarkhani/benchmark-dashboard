@@ -314,8 +314,6 @@ def load_runs(*, force: bool = False) -> list[dict[str, Any]]:
         benchmark_urls = sorted(
             {row["benchmark_url"] for row in rows if row.get("benchmark_url")}
         )
-        # RoHub authentication is process-global, so mirror the notebook's
-        # sequential downloads instead of logging in from concurrent threads.
         benchmark_metadata = {url: _benchmark_metadata(url) for url in benchmark_urls}
 
         result = [
