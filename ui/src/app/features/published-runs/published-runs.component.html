@@ -11,11 +11,7 @@
         (input)="search(query.value)"
     /></span>
     <p-button
-      [label]="
-        selectedRuns.length > 0
-          ? 'Compare selected (' + selectedRuns.length + ')'
-          : 'Compare selected'
-      "
+      label="Compare"
       icon="pi pi-chart-line"
       [outlined]="true"
       [disabled]="!canCompare"
@@ -23,24 +19,13 @@
       (onClick)="compare()"
     />
     <p-button
-      label="Refresh data"
+      label="Reload"
       icon="pi pi-refresh"
       [loading]="loading()"
       (onClick)="refreshRequested.emit()"
     />
   </div>
   <div class="summary">
-    <span>
-      @if (benchmarkName()) {
-        {{ displayedRuns }} of {{ runs().length }} runs for
-        <strong>{{ benchmarkName() }}</strong>
-        <button class="clear-filter" type="button" (click)="clearBenchmarkRequested.emit()">
-          Clear
-        </button>
-      } @else {
-        Select a benchmark above to view its published runs
-      }
-    </span>
     <span>Updated {{ updated() }}</span>
   </div>
   <div class="grid-loading-wrapper">
@@ -61,7 +46,6 @@
       [selectionColumnDef]="{ width: 48, pinned: 'left', sortable: false, resizable: false }"
       [getRowId]="getRowId"
       (gridReady)="gridReady($event)"
-      (filterChanged)="updateDisplayedCount()"
       (selectionChanged)="selectionChanged($event)"
       (rowClicked)="openSingle($event)"
     />

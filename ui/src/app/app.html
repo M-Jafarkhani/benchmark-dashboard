@@ -27,10 +27,8 @@
       [runs]="publishedRuns"
       [loading]="loading"
       [updated]="updated"
-      [benchmarkName]="selectedBenchmarkName"
       (refreshRequested)="load(true)"
       (analysisRequested)="openAnalysis($event)"
-      (clearBenchmarkRequested)="clearBenchmarkFilter()"
     />
   }
 </main>

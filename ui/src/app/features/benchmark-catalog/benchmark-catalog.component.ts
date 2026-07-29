@@ -1,4 +1,4 @@
-import { Component, computed, input, output, ViewChild } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
   ColDef,
@@ -23,7 +23,6 @@ export class BenchmarkCatalogComponent {
   readonly runs = input.required<Run[]>();
   readonly loading = input(false);
   readonly selectionChange = output<Run | null>();
-  @ViewChild(AgGridAngular) grid?: AgGridAngular<Run>;
 
   readonly benchmarks = computed(() => [
     ...new Map(this.runs().map((run) => [run.benchmark_url || run.benchmark_repo, run])).values(),
@@ -111,9 +110,5 @@ export class BenchmarkCatalogComponent {
     if (!event.api.getSelectedRows().length) {
       event.api.getDisplayedRowAtIndex(0)?.setSelected(true);
     }
-  }
-
-  clearSelection(): void {
-    this.grid?.api.deselectAll();
   }
 }

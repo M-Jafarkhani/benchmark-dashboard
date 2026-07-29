@@ -152,7 +152,6 @@ input {
   background: var(--accent) !important;
 }
 
-.p-inputtext,
 .p-dialog,
 .p-dialog-header,
 .p-dialog-content {
@@ -162,7 +161,6 @@ input {
 .p-inputtext {
   font-family: 'IBM Plex', Arial, sans-serif !important;
   font-size: 18px !important;
-  border-width: 0 0 2px !important;
   border-color: var(--text) !important;
   background: transparent !important;
 }

@@ -10,7 +10,6 @@ import { BenchmarkCatalogComponent } from './features/benchmark-catalog/benchmar
 import { PublishedRunsComponent } from './features/published-runs/published-runs.component';
 import { RunAnalysisDialogComponent } from './features/run-analysis/run-analysis-dialog.component';
 import { SparqlLogComponent } from './features/sparql-log/sparql-log.component';
-import { resourceLabel } from './shared/utils/display-formatters';
 
 @Component({
   selector: 'app-root',
@@ -30,13 +29,11 @@ export class App implements OnInit {
   private readonly api = inject(BenchmarkApi);
   private readonly changeDetector = inject(ChangeDetectorRef);
   readonly theme = inject(ThemeService);
-  @ViewChild(BenchmarkCatalogComponent) catalog?: BenchmarkCatalogComponent;
   @ViewChild(RunAnalysisDialogComponent) analysisDialog?: RunAnalysisDialogComponent;
 
   runs: Run[] = [];
   publishedRuns: Run[] = [];
   selectedBenchmarkUrl = '';
-  selectedBenchmarkName = '';
   loading = true;
   error = '';
   updated = '';
@@ -66,16 +63,6 @@ export class App implements OnInit {
 
   selectBenchmark(benchmark: Run | null): void {
     this.selectedBenchmarkUrl = benchmark?.benchmark_url || '';
-    this.selectedBenchmarkName = benchmark
-      ? benchmark.benchmark || resourceLabel(benchmark.benchmark_repo)
-      : '';
-    this.updatePublishedRuns();
-  }
-
-  clearBenchmarkFilter(): void {
-    this.catalog?.clearSelection();
-    this.selectedBenchmarkUrl = '';
-    this.selectedBenchmarkName = '';
     this.updatePublishedRuns();
   }
 

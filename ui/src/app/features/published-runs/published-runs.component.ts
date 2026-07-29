@@ -31,13 +31,10 @@ export class PublishedRunsComponent {
   readonly runs = input.required<Run[]>();
   readonly loading = input(false);
   readonly updated = input('');
-  readonly benchmarkName = input('');
   readonly refreshRequested = output<void>();
   readonly analysisRequested = output<Run[]>();
-  readonly clearBenchmarkRequested = output<void>();
 
   selectedRuns: Run[] = [];
-  displayedRuns = 0;
   private gridApi?: GridApi<Run>;
   readonly getRowId = (params: { data: Run }) => params.data.run_id;
   readonly defaultColDef: ColDef = { sortable: true, resizable: true, filter: true };
@@ -97,13 +94,11 @@ export class PublishedRunsComponent {
 
   gridReady(event: GridReadyEvent<Run>): void {
     this.gridApi = event.api;
-    this.updateDisplayedCount();
   }
   resetDetailGrid(): void {
     this.selectedRuns = [];
     this.gridApi?.deselectAll();
     this.gridApi?.paginationGoToFirstPage();
-    this.updateDisplayedCount();
   }
   search(value: string): void {
     this.gridApi?.setGridOption('quickFilterText', value);
@@ -130,11 +125,5 @@ export class PublishedRunsComponent {
     return this.canCompare
       ? `Compare ${this.selectedRuns.length} selected runs`
       : 'Select runs from the same benchmark';
-  }
-
-  updateDisplayedCount(): void {
-    let count = 0;
-    this.gridApi?.forEachNodeAfterFilter(() => count++);
-    this.displayedRuns = count;
   }
 }
