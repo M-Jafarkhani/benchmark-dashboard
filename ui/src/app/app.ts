@@ -34,6 +34,7 @@ export class App implements OnInit {
   @ViewChild(RunAnalysisDialogComponent) analysisDialog?: RunAnalysisDialogComponent;
 
   runs: Run[] = [];
+  publishedRuns: Run[] = [];
   selectedBenchmarkUrl = '';
   selectedBenchmarkName = '';
   loading = true;
@@ -50,6 +51,7 @@ export class App implements OnInit {
     this.api.runs(refresh).subscribe({
       next: (response) => {
         this.runs = response.items;
+        this.updatePublishedRuns();
         this.updated = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         this.loading = false;
         this.changeDetector.markForCheck();
@@ -67,15 +69,23 @@ export class App implements OnInit {
     this.selectedBenchmarkName = benchmark
       ? benchmark.benchmark || resourceLabel(benchmark.benchmark_repo)
       : '';
+    this.updatePublishedRuns();
   }
 
   clearBenchmarkFilter(): void {
     this.catalog?.clearSelection();
     this.selectedBenchmarkUrl = '';
     this.selectedBenchmarkName = '';
+    this.updatePublishedRuns();
   }
 
   openAnalysis(runs: Run[]): void {
     this.analysisDialog?.open(runs);
+  }
+
+  private updatePublishedRuns(): void {
+    this.publishedRuns = this.selectedBenchmarkUrl
+      ? this.runs.filter((run) => run.benchmark_url === this.selectedBenchmarkUrl)
+      : [];
   }
 }

@@ -1,17 +1,17 @@
 <header class="hero">
-  <div class="brand">
-    <img class="brand-icon" src="assets/icon.png" alt="" />
-    <div class="eyebrow">Simulation Benchmarks</div>
+  <a class="brand-link" href="https://nfdi4ing.de/" aria-label="Visit the NFDI4ING website">
+    <img class="brand-wordmark" src="assets/Logo_24.svg" alt="NFDI4ING" />
+  </a>
+  <div class="ribbon-actions">
+    <label class="theme-switch">
+      <i class="pi" [class.pi-sun]="!theme.dark()" [class.pi-moon]="theme.dark()"></i>
+      <p-toggleswitch
+        [ngModel]="theme.dark()"
+        (ngModelChange)="theme.setDark($event)"
+        ariaLabel="Toggle dark theme"
+      />
+    </label>
   </div>
-  <label class="theme-switch">
-    <i class="pi" [class.pi-sun]="!theme.dark()" [class.pi-moon]="theme.dark()"></i>
-    <span>{{ theme.dark() ? 'Dark' : 'Light' }} theme</span>
-    <p-toggleswitch
-      [ngModel]="theme.dark()"
-      (ngModelChange)="theme.setDark($event)"
-      ariaLabel="Toggle dark theme"
-    />
-  </label>
 </header>
 
 <main>
@@ -24,10 +24,9 @@
       (selectionChange)="selectBenchmark($event)"
     />
     <app-published-runs
-      [runs]="runs"
+      [runs]="publishedRuns"
       [loading]="loading"
       [updated]="updated"
-      [benchmarkUrl]="selectedBenchmarkUrl"
       [benchmarkName]="selectedBenchmarkName"
       (refreshRequested)="load(true)"
       (analysisRequested)="openAnalysis($event)"

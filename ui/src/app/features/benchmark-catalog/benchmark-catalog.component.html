@@ -1,6 +1,6 @@
 <section class="section-block">
   <div class="section-heading">
-    <div class="eyebrow">Benchmarks</div>
+    <h2 class="section-title">Benchmarks</h2>
     <span>{{ benchmarks().length }} benchmarks</span>
   </div>
   <div class="grid-loading-wrapper">
@@ -12,6 +12,7 @@
       [rowSelection]="{ mode: 'singleRow', checkboxes: true, enableClickSelection: true }"
       [selectionColumnDef]="{ width: 48, pinned: 'left', sortable: false, resizable: false }"
       [getRowId]="getRowId"
+      (rowDataUpdated)="selectFirstRow($event)"
       (selectionChanged)="selectionChanged($event)"
       domLayout="autoHeight"
     />

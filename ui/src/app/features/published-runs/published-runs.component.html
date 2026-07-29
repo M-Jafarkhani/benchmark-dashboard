@@ -1,5 +1,5 @@
 <section class="section-block">
-  <div class="section-heading"><div class="eyebrow">Published runs</div></div>
+  <div class="section-heading"><h2 class="section-title">Published runs</h2></div>
   <div class="toolbar">
     <span class="search"
       ><i class="pi pi-search"></i
@@ -7,7 +7,7 @@
         #query
         pInputText
         type="search"
-        placeholder="Search software or benchmark…"
+        placeholder="Search software…"
         (input)="search(query.value)"
     /></span>
     <p-button
@@ -31,12 +31,14 @@
   </div>
   <div class="summary">
     <span
-      >{{ displayedRuns }} of {{ runs().length }} runs
-      @if (benchmarkName()) {
-        · Benchmark: <strong>{{ benchmarkName() }}</strong>
+      >@if (benchmarkName()) {
+        {{ displayedRuns }} of {{ runs().length }} runs for
+        <strong>{{ benchmarkName() }}</strong>
         <button class="clear-filter" type="button" (click)="clearBenchmarkRequested.emit()">
           Clear
         </button>
+      } @else {
+        Select a benchmark above to view its published runs
       }
     </span>
     <span>Updated {{ updated() }}</span>
@@ -58,10 +60,8 @@
       }"
       [selectionColumnDef]="{ width: 48, pinned: 'left', sortable: false, resizable: false }"
       [getRowId]="getRowId"
-      [isExternalFilterPresent]="isBenchmarkFilterPresent"
-      [doesExternalFilterPass]="doesBenchmarkFilterPass"
       (gridReady)="gridReady($event)"
-      (filterChanged)="applyBenchmarkFilter()"
+      (filterChanged)="updateDisplayedCount()"
       (selectionChanged)="selectionChanged($event)"
       (rowClicked)="openSingle($event)"
     />

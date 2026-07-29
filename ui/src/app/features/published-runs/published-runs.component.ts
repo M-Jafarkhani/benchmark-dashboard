@@ -5,7 +5,6 @@ import {
   GridApi,
   GridReadyEvent,
   ICellRendererParams,
-  IRowNode,
   RowClickedEvent,
   SelectionChangedEvent,
 } from 'ag-grid-community';
@@ -14,7 +13,11 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { Run } from '../../core/models/benchmark.models';
-import { formatPublishedDate, resourceLabel } from '../../shared/utils/display-formatters';
+import {
+  formatPublishedDate,
+  formatPublishedDateTooltip,
+  resourceLabel,
+} from '../../shared/utils/display-formatters';
 import { imageLink, textLink } from '../../shared/utils/grid-cell-renderers';
 
 @Component({
@@ -28,7 +31,6 @@ export class PublishedRunsComponent {
   readonly runs = input.required<Run[]>();
   readonly loading = input(false);
   readonly updated = input('');
-  readonly benchmarkUrl = input('');
   readonly benchmarkName = input('');
   readonly refreshRequested = output<void>();
   readonly analysisRequested = output<Run[]>();
@@ -38,9 +40,6 @@ export class PublishedRunsComponent {
   displayedRuns = 0;
   private gridApi?: GridApi<Run>;
   readonly getRowId = (params: { data: Run }) => params.data.run_id;
-  readonly isBenchmarkFilterPresent = () => Boolean(this.benchmarkUrl());
-  readonly doesBenchmarkFilterPass = (node: IRowNode<Run>) =>
-    !this.benchmarkUrl() || node.data?.benchmark_url === this.benchmarkUrl();
   readonly defaultColDef: ColDef = { sortable: true, resizable: true, filter: true };
   readonly columns: ColDef<Run>[] = [
     {
@@ -52,18 +51,11 @@ export class PublishedRunsComponent {
         textLink(params.data?.software_url, params.value || 'Unknown'),
     },
     {
-      headerName: 'Benchmark',
-      field: 'benchmark_repo',
-      minWidth: 190,
-      flex: 1,
-      valueFormatter: (params) => resourceLabel(params.value),
-      cellClass: 'benchmark-name',
-    },
-    {
       headerName: 'Published',
       field: 'datePublished',
-      minWidth: 210,
+      minWidth: 180,
       valueFormatter: (params) => formatPublishedDate(params.value),
+      tooltipValueGetter: (params) => formatPublishedDateTooltip(params.value),
       cellClass: 'published-date',
     },
     {
@@ -98,17 +90,19 @@ export class PublishedRunsComponent {
 
   constructor() {
     effect(() => {
-      this.benchmarkUrl();
-      queueMicrotask(() => this.applyBenchmarkFilter());
+      this.runs();
+      queueMicrotask(() => this.resetDetailGrid());
     });
   }
 
   gridReady(event: GridReadyEvent<Run>): void {
     this.gridApi = event.api;
-    this.applyBenchmarkFilter();
+    this.updateDisplayedCount();
   }
-  applyBenchmarkFilter(): void {
-    this.gridApi?.onFilterChanged();
+  resetDetailGrid(): void {
+    this.selectedRuns = [];
+    this.gridApi?.deselectAll();
+    this.gridApi?.paginationGoToFirstPage();
     this.updateDisplayedCount();
   }
   search(value: string): void {
@@ -138,7 +132,7 @@ export class PublishedRunsComponent {
       : 'Select runs from the same benchmark';
   }
 
-  private updateDisplayedCount(): void {
+  updateDisplayedCount(): void {
     let count = 0;
     this.gridApi?.forEachNodeAfterFilter(() => count++);
     this.displayedRuns = count;

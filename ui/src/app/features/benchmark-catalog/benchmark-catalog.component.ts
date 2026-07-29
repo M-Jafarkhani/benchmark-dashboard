@@ -1,6 +1,11 @@
 import { Component, computed, input, output, ViewChild } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
-import { ColDef, ICellRendererParams, SelectionChangedEvent } from 'ag-grid-community';
+import {
+  ColDef,
+  ICellRendererParams,
+  RowDataUpdatedEvent,
+  SelectionChangedEvent,
+} from 'ag-grid-community';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { Run } from '../../core/models/benchmark.models';
@@ -100,6 +105,12 @@ export class BenchmarkCatalogComponent {
 
   selectionChanged(event: SelectionChangedEvent<Run>): void {
     this.selectionChange.emit(event.api.getSelectedRows()[0] || null);
+  }
+
+  selectFirstRow(event: RowDataUpdatedEvent<Run>): void {
+    if (!event.api.getSelectedRows().length) {
+      event.api.getDisplayedRowAtIndex(0)?.setSelected(true);
+    }
   }
 
   clearSelection(): void {

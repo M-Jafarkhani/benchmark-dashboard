@@ -78,7 +78,7 @@ import { RunAnalysisData, SelectOption } from './run-analysis.models';
         gap: 0.75rem;
         padding: 1rem;
         border: 1px solid var(--line);
-        border-radius: 10px;
+        border-radius: 0;
       }
       legend {
         padding: 0 0.4rem;
@@ -107,7 +107,7 @@ import { RunAnalysisData, SelectOption } from './run-analysis.models';
         width: 100%;
         height: 450px;
         border: 1px solid var(--line);
-        border-radius: 10px;
+        border-radius: 0;
         overflow: hidden;
       }
       .plot-panel.maximized .plot {
@@ -205,7 +205,7 @@ export class ComparisonPlotComponent implements OnChanges, OnDestroy {
     });
     this.plotMessage = `${pairs.length} plotted from ${this.rows().length} filtered observations`;
     const Plotly = (await import('plotly.js-dist-min')).default;
-    const dark = this.theme.dark();
+    const colors = this.theme.colors();
     Plotly.react(
       this.plotElement.nativeElement,
       traces,
@@ -213,20 +213,23 @@ export class ComparisonPlotComponent implements OnChanges, OnDestroy {
         margin: { l: 75, r: 24, t: 25, b: 70 },
         showlegend: traces.length > 1,
         hovermode: 'closest',
-        paper_bgcolor: dark ? '#18201b' : '#ffffff',
-        plot_bgcolor: dark ? '#111814' : '#fafcf9',
-        font: { color: dark ? '#e7eee9' : '#17201b' },
+        paper_bgcolor: colors.surface,
+        plot_bgcolor: colors.plot,
+        font: { color: colors.text, family: 'IBM Plex, Arial, sans-serif' },
+        colorway: ['#046cb4', '#e6005f', '#f9b200', '#792182', '#00763c', '#ee7202'],
         xaxis: {
           title: { text: xColumn?.label },
           type: this.xScale,
           automargin: true,
-          gridcolor: dark ? '#34413a' : '#dfe5e1',
+          gridcolor: colors.line,
+          zerolinecolor: colors.line,
         },
         yaxis: {
           title: { text: yColumn?.label },
           type: this.yScale,
           automargin: true,
-          gridcolor: dark ? '#34413a' : '#dfe5e1',
+          gridcolor: colors.line,
+          zerolinecolor: colors.line,
         },
       },
       {

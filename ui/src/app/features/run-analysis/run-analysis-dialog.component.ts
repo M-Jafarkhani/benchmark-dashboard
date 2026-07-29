@@ -68,14 +68,14 @@ import { RunValuesGridComponent } from './run-values-grid.component';
     `
       h2 {
         margin: 0.2rem 0;
-        font-family: Georgia, serif;
-        font-weight: 400;
+        font-weight: 700;
+        text-transform: uppercase;
       }
       small {
         color: var(--muted);
       }
       .eyebrow {
-        color: var(--accent);
+        color: var(--text);
         font-size: 0.7rem;
         font-weight: 800;
         letter-spacing: 0.14em;
@@ -89,7 +89,7 @@ import { RunValuesGridComponent } from './run-values-grid.component';
         color: var(--muted);
       }
       .error {
-        color: #a23b31;
+        color: var(--danger);
       }
       :host ::ng-deep .p-tabpanels {
         padding: 1rem 0 0;
