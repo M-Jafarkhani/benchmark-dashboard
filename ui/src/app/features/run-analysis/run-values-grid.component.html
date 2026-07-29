@@ -1,0 +1,19 @@
+<div class="actions">
+  <p-button
+    label="Export CSV"
+    icon="pi pi-download"
+    size="small"
+    [outlined]="true"
+    [disabled]="!gridApi"
+    (onClick)="exportCsv()"
+  />
+</div>
+
+<ag-grid-angular
+  class="values-grid"
+  [rowData]="data().rows"
+  [columnDefs]="columnDefs()"
+  [defaultColDef]="defaultColDef"
+  (gridReady)="gridReady($event)"
+  (filterChanged)="filterChanged($event)"
+/>

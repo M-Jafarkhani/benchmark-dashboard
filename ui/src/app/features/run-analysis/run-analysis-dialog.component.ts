@@ -19,83 +19,8 @@ import { RunValuesGridComponent } from './run-values-grid.component';
     RunValuesGridComponent,
     TabsModule,
   ],
-  template: `
-    <p-dialog
-      [(visible)]="visible"
-      [modal]="true"
-      [maximizable]="true"
-      [style]="{ width: 'min(1120px,96vw)' }"
-      [contentStyle]="{ height: 'min(680px,76vh)' }"
-      (onMaximize)="dialogMaximized = $event.maximized"
-    >
-      <ng-template #header
-        ><div>
-          <span class="eyebrow">Run values</span>
-          <h2>{{ title }}</h2>
-          <small>{{ context }}</small>
-        </div></ng-template
-      >
-      @if (loading) {
-        <div class="state">
-          <p-progress-spinner strokeWidth="4" ariaLabel="Loading run values" />
-          <p>Running SPARQL queries…</p>
-        </div>
-      } @else if (error) {
-        <p class="state error">{{ error }}</p>
-      } @else if (analysis) {
-        <p-tabs [value]="tab" (valueChange)="changeTab($event)">
-          <p-tablist
-            ><p-tab value="values">Values</p-tab><p-tab value="plot">Plot</p-tab></p-tablist
-          >
-          <p-tabpanels>
-            <p-tabpanel value="values"
-              ><app-run-values-grid
-                [data]="analysis"
-                (filteredRowsChange)="filteredRowsChanged($event)"
-            /></p-tabpanel>
-            <p-tabpanel value="plot"
-              ><app-comparison-plot
-                [data]="analysis"
-                [rows]="filteredRows"
-                [maximized]="dialogMaximized"
-            /></p-tabpanel>
-          </p-tabpanels>
-        </p-tabs>
-      }
-    </p-dialog>
-  `,
-  styles: [
-    `
-      h2 {
-        margin: 0.2rem 0;
-        font-weight: 700;
-        text-transform: uppercase;
-      }
-      small {
-        color: var(--muted);
-      }
-      .eyebrow {
-        color: var(--text);
-        font-size: 0.7rem;
-        font-weight: 800;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-      }
-      .state {
-        height: 100%;
-        display: grid;
-        place-content: center;
-        justify-items: center;
-        color: var(--muted);
-      }
-      .error {
-        color: var(--danger);
-      }
-      :host ::ng-deep .p-tabpanels {
-        padding: 1rem 0 0;
-      }
-    `,
-  ],
+  templateUrl: './run-analysis-dialog.component.html',
+  styleUrl: './run-analysis-dialog.component.css',
 })
 export class RunAnalysisDialogComponent {
   private readonly dataService = inject(RunAnalysisDataService);

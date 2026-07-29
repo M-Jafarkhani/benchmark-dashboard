@@ -9,40 +9,8 @@ import { RunAnalysisData } from './run-analysis.models';
   selector: 'app-run-values-grid',
   standalone: true,
   imports: [AgGridAngular, ButtonModule],
-  template: `
-    <div class="actions">
-      <p-button
-        label="Export CSV"
-        icon="pi pi-download"
-        size="small"
-        [outlined]="true"
-        [disabled]="!gridApi"
-        (onClick)="exportCsv()"
-      />
-    </div>
-    <ag-grid-angular
-      class="values-grid"
-      [rowData]="data().rows"
-      [columnDefs]="columnDefs()"
-      [defaultColDef]="defaultColDef"
-      (gridReady)="gridReady($event)"
-      (filterChanged)="filterChanged($event)"
-    />
-  `,
-  styles: [
-    `
-      .actions {
-        display: flex;
-        justify-content: flex-end;
-        margin-bottom: 0.5rem;
-      }
-      .values-grid {
-        display: block;
-        width: 100%;
-        height: 560px;
-      }
-    `,
-  ],
+  templateUrl: './run-values-grid.component.html',
+  styleUrl: './run-values-grid.component.css',
 })
 export class RunValuesGridComponent {
   readonly data = input.required<RunAnalysisData>();

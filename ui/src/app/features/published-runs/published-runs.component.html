@@ -30,8 +30,8 @@
     />
   </div>
   <div class="summary">
-    <span
-      >@if (benchmarkName()) {
+    <span>
+      @if (benchmarkName()) {
         {{ displayedRuns }} of {{ runs().length }} runs for
         <strong>{{ benchmarkName() }}</strong>
         <button class="clear-filter" type="button" (click)="clearBenchmarkRequested.emit()">

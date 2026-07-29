@@ -1,0 +1,54 @@
+<section class="plot-panel" [class.maximized]="maximized()">
+  <div class="axis-groups">
+    <fieldset>
+      <legend>X axis</legend>
+      <label>
+        Parameter
+        <p-select
+          [options]="parameterOptions"
+          [(ngModel)]="xKey"
+          optionLabel="label"
+          optionValue="value"
+          (onChange)="draw()"
+        />
+      </label>
+      <label>
+        Scale
+        <p-select
+          [options]="scaleOptions"
+          [(ngModel)]="xScale"
+          optionLabel="label"
+          optionValue="value"
+          (onChange)="draw()"
+        />
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Y axis</legend>
+      <label>
+        Metric
+        <p-select
+          [options]="metricOptions"
+          [(ngModel)]="yKey"
+          optionLabel="label"
+          optionValue="value"
+          (onChange)="draw()"
+        />
+      </label>
+      <label>
+        Scale
+        <p-select
+          [options]="scaleOptions"
+          [(ngModel)]="yScale"
+          optionLabel="label"
+          optionValue="value"
+          (onChange)="draw()"
+        />
+      </label>
+    </fieldset>
+  </div>
+
+  <p class="plot-message">{{ plotMessage }}</p>
+  <div #plot class="plot"></div>
+</section>

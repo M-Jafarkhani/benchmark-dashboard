@@ -1,0 +1,33 @@
+h2 {
+  margin: 0.2rem 0;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+small {
+  color: var(--muted);
+}
+
+.eyebrow {
+  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.state {
+  height: 100%;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+}
+
+:host ::ng-deep .p-tabpanels {
+  padding: 1rem 0 0;
+}

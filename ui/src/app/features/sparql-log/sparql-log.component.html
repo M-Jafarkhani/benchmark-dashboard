@@ -1,0 +1,93 @@
+<p-button
+  class="log-launcher"
+  label="SPARQL log"
+  icon="pi pi-code"
+  severity="contrast"
+  (onClick)="open()"
+/>
+
+<p-dialog
+  [(visible)]="visible"
+  [modal]="true"
+  [maximizable]="true"
+  [style]="{ width: 'min(920px, 94vw)' }"
+  [contentStyle]="{ height: 'min(620px, 70vh)', overflow: 'auto' }"
+  (onHide)="stopPolling()"
+>
+  <ng-template #header>
+    <div>
+      <span class="eyebrow">Live execution flow</span>
+      <h2>SPARQL queries</h2>
+      <small>{{ entries.length }} recent queries · updates every second</small>
+    </div>
+  </ng-template>
+
+  <div class="log-toolbar">
+    <p-button
+      label="Clear logs"
+      icon="pi pi-trash"
+      severity="danger"
+      [outlined]="true"
+      size="small"
+      [disabled]="clearing"
+      (onClick)="clear()"
+    />
+  </div>
+
+  @if (error) {
+    <p class="error state">{{ error }}</p>
+  } @else if (!entries.length) {
+    <p class="state">No SPARQL query has run yet.</p>
+  }
+
+  @for (entry of entries; track entry.id) {
+    <article class="log-entry">
+      <header>
+        <span class="status" [class]="entry.status">{{ entry.status }}</span>
+        <time>{{ entry.started_at | date: 'mediumTime' }}</time>
+        <span>{{ entry.duration_ms === null ? 'In progress' : entry.duration_ms + ' ms' }}</span>
+        <div class="log-actions">
+          <button
+            class="log-action"
+            type="button"
+            [attr.aria-label]="copiedEntryId === entry.id ? 'Query copied' : 'Copy query'"
+            [title]="copiedEntryId === entry.id ? 'Copied' : 'Copy query'"
+            (click)="copyEntry(entry)"
+          >
+            <i
+              class="pi"
+              [class.pi-copy]="copiedEntryId !== entry.id"
+              [class.pi-check]="copiedEntryId === entry.id"
+              aria-hidden="true"
+            ></i>
+          </button>
+          <button
+            class="log-action"
+            type="button"
+            [attr.aria-expanded]="!isCollapsed(entry.id)"
+            [attr.aria-controls]="'sparql-log-' + entry.id"
+            [attr.aria-label]="isCollapsed(entry.id) ? 'Expand query' : 'Collapse query'"
+            [title]="isCollapsed(entry.id) ? 'Expand query' : 'Collapse query'"
+            (click)="toggleEntry(entry.id)"
+          >
+            <i
+              class="pi"
+              [class.pi-chevron-down]="isCollapsed(entry.id)"
+              [class.pi-chevron-up]="!isCollapsed(entry.id)"
+              aria-hidden="true"
+            ></i>
+          </button>
+        </div>
+      </header>
+
+      @if (!isCollapsed(entry.id)) {
+        <div [id]="'sparql-log-' + entry.id">
+          <pre>{{ entry.query }}</pre>
+          @if (entry.error) {
+            <p class="query-error">{{ entry.error }}</p>
+          }
+        </div>
+      }
+    </article>
+  }
+</p-dialog>
