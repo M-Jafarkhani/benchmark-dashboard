@@ -31,6 +31,7 @@
         <p-tabpanel value="values">
           <app-run-values-grid
             [data]="analysis"
+            [maximized]="dialogMaximized"
             (filteredRowsChange)="filteredRowsChanged($event)"
           />
         </p-tabpanel>

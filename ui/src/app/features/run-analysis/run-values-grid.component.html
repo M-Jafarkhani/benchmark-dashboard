@@ -1,4 +1,8 @@
 <div class="actions">
+  <div class="column-legend" aria-label="Column type legend">
+    <span><i class="parameter-swatch" aria-hidden="true"></i>Parameters</span>
+    <span><i class="metric-swatch" aria-hidden="true"></i>Metrics</span>
+  </div>
   <p-button
     label="Export CSV"
     icon="pi pi-download"
@@ -11,6 +15,7 @@
 
 <ag-grid-angular
   class="values-grid"
+  [class.maximized]="maximized()"
   [rowData]="data().rows"
   [columnDefs]="columnDefs()"
   [defaultColDef]="defaultColDef"

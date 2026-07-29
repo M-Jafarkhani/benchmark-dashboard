@@ -126,7 +126,7 @@ export class ComparisonPlotComponent implements OnChanges, OnDestroy {
           zerolinecolor: colors.line,
         },
         yaxis: {
-          title: { text: yColumn?.label },
+          title: { text: yColumn?.label, standoff: 14 },
           type: this.yScale,
           automargin: true,
           gridcolor: colors.line,

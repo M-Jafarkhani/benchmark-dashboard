@@ -14,6 +14,7 @@ import { RunAnalysisData } from './run-analysis.models';
 })
 export class RunValuesGridComponent {
   readonly data = input.required<RunAnalysisData>();
+  readonly maximized = input(false);
   readonly filteredRowsChange = output<Record<string, unknown>[]>();
   gridApi?: GridApi;
   readonly defaultColDef: ColDef = {
@@ -53,6 +54,7 @@ export class RunValuesGridComponent {
           field: column.key,
           headerName: column.label,
           headerClass: `header-${column.kind}`,
+          cellClass: `cell-${column.kind}`,
           filter: numeric ? 'agNumberColumnFilter' : 'agTextColumnFilter',
           floatingFilter: true,
           cellDataType: numeric ? 'number' : 'text',

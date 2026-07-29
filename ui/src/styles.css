@@ -46,6 +46,12 @@
   --warning-soft: #fff2c7;
   --success: #00763c;
   --success-soft: #e2f2e9;
+  --parameter: #046cb4;
+  --parameter-soft: #e8f4fb;
+  --parameter-cell: #f5faff;
+  --metric: #792182;
+  --metric-soft: #f3e8f5;
+  --metric-cell: #fcf7fc;
 }
 
 .app-dark {
@@ -66,6 +72,12 @@
   --warning-soft: #423718;
   --success: #8bd4a9;
   --success-soft: #173b2a;
+  --parameter: #8aaed8;
+  --parameter-soft: #173153;
+  --parameter-cell: #112743;
+  --metric: #d69cdd;
+  --metric-soft: #3b2145;
+  --metric-cell: #2d1c38;
 }
 
 * {
