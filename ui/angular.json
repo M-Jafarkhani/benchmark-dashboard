@@ -58,11 +58,6 @@
                 "glob": "**/*",
                 "input": "assets",
                 "output": "assets"
-              },
-              {
-                "glob": "Logo_24.svg",
-                "input": "NFDI4ING HOME/NFDI4ING home_files",
-                "output": "assets"
               }
             ],
             "styles": ["src/styles.css"]
