@@ -33,20 +33,29 @@
   [(visible)]="metadataVisible"
   [modal]="true"
   [style]="{ width: 'min(760px, 94vw)' }"
-  header="{{ metadataBenchmark?.benchmark || 'Benchmark metadata' }}"
+  [contentStyle]="{ height: 'min(520px, 70vh)', overflow: 'auto' }"
 >
+  <ng-template #header>
+    <div>
+      <span class="eyebrow">Benchmark metadata</span>
+      <h2>{{ metadataBenchmark?.benchmark || 'Benchmark metadata' }}</h2>
+    </div>
+  </ng-template>
+
   @if (metadataBenchmark) {
     <p-tabs value="parameters">
       <p-tablist>
-        <p-tab value="parameters">
+        <p-tab value="parameters" class="parameter-tab">
           Parameters ({{ metadataBenchmark.parameters.length }})
         </p-tab>
-        <p-tab value="metrics">Metrics ({{ metadataBenchmark.metrics.length }})</p-tab>
+        <p-tab value="metrics" class="metric-tab">
+          Metrics ({{ metadataBenchmark.metrics.length }})
+        </p-tab>
       </p-tablist>
       <p-tabpanels>
         <p-tabpanel value="parameters">
           <ag-grid-angular
-            class="metadata-grid"
+            class="metadata-grid parameter-grid"
             [rowData]="metadataBenchmark.parameters"
             [columnDefs]="variableColumns"
             [defaultColDef]="defaultColDef"
@@ -55,7 +64,7 @@
         </p-tabpanel>
         <p-tabpanel value="metrics">
           <ag-grid-angular
-            class="metadata-grid"
+            class="metadata-grid metric-grid"
             [rowData]="metadataBenchmark.metrics"
             [columnDefs]="variableColumns"
             [defaultColDef]="defaultColDef"

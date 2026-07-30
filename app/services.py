@@ -19,7 +19,6 @@ CONFIG = dotenv_values(Path(__file__).resolve().parent.parent / ".env")
 
 ZBMATH_API = "https://api.zbmath.org/v1/software"
 CACHE_SECONDS = 300
-QUDT_UNIT_PREFIX = "http://qudt.org/vocab/unit/"
 
 RUNS_QUERY = """
 PREFIX schemas: <https://schema.org/>
@@ -49,13 +48,6 @@ class UpstreamError(RuntimeError):
 
 class RunNotFoundError(LookupError):
     pass
-
-
-def _unit_url(unit: str | None) -> str | None:
-    """Expand a compact QUDT unit identifier left unresolved by JSON-LD."""
-    if unit and unit.startswith("unit:"):
-        return f"{QUDT_UNIT_PREFIX}{unit.removeprefix('unit:')}"
-    return unit
 
 
 def _start_sparql_log(query: str) -> int:
@@ -189,9 +181,10 @@ def _benchmark_metadata(benchmark_url: str) -> dict[str, Any]:
             benchmark = BenchmarkLoader(destination).load()
 
             def variable_metadata(variable) -> dict[str, str | None]:
+                print(variable)
                 return {
                     "name": variable.label or variable.id,
-                    "unit": _unit_url(variable.unit),
+                    "unit": getattr(variable, "unit_iri", None) or variable.unit,
                 }
             
             parameters = [

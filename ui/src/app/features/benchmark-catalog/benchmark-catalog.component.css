@@ -1,6 +1,18 @@
 :host {
   display: block;
 }
+h2 {
+  margin: 0.2rem 0;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.eyebrow {
+  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
 .section-block {
   margin-bottom: 72px;
 }
@@ -21,7 +33,7 @@
   margin: 0;
   color: var(--text);
   font-family: 'IBM Plex', Arial, sans-serif;
-  font-size: 40px;
+  font-size: 30px;
   font-weight: 700;
   line-height: 1.1;
   letter-spacing: 0.2px;
@@ -104,6 +116,36 @@
   width: 100%;
   min-height: 96px;
   border: 1px solid var(--text);
+}
+:host ::ng-deep .parameter-tab {
+  color: var(--parameter);
+}
+:host ::ng-deep .metric-tab {
+  color: var(--metric);
+}
+:host ::ng-deep .parameter-tab.p-tab-active {
+  background: var(--parameter-soft);
+}
+:host ::ng-deep .metric-tab.p-tab-active {
+  background: var(--metric-soft);
+}
+:host ::ng-deep .parameter-grid .ag-header-cell {
+  background: var(--parameter-soft);
+  color: var(--parameter);
+}
+:host ::ng-deep .metric-grid .ag-header-cell {
+  background: var(--metric-soft);
+  color: var(--metric);
+}
+:host ::ng-deep .parameter-grid .ag-cell {
+  background: var(--parameter-cell);
+}
+:host ::ng-deep .metric-grid .ag-cell {
+  background: var(--metric-cell);
+}
+:host ::ng-deep .parameter-grid .ag-header-cell-text,
+:host ::ng-deep .metric-grid .ag-header-cell-text {
+  color: inherit;
 }
 :host ::ng-deep .unit-link {
   color: var(--accent);
