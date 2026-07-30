@@ -86,6 +86,31 @@
   display: flex;
   align-items: center;
 }
+:host ::ng-deep .metadata-button {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+:host ::ng-deep .metadata-button:hover {
+  background: var(--soft);
+}
+:host ::ng-deep .metadata-grid {
+  width: 100%;
+  min-height: 96px;
+  border: 1px solid var(--text);
+}
+:host ::ng-deep .unit-link {
+  color: var(--accent);
+}
+:host ::ng-deep .p-tabpanels {
+  padding: 1rem 0 0;
+}
 :host ::ng-deep .centered-column {
   justify-content: center;
 }

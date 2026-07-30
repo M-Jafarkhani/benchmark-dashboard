@@ -15,13 +15,11 @@ from typing import Any
 from urllib.request import Request, urlopen
 
 from dotenv import dotenv_values
-from rdflib import Graph, Namespace
-from rdflib.namespace import RDF, RDFS
-
 CONFIG = dotenv_values(Path(__file__).resolve().parent.parent / ".env")
 
 ZBMATH_API = "https://api.zbmath.org/v1/software"
 CACHE_SECONDS = 300
+QUDT_UNIT_PREFIX = "http://qudt.org/vocab/unit/"
 
 RUNS_QUERY = """
 PREFIX schemas: <https://schema.org/>
@@ -45,16 +43,19 @@ _sparql_log: deque[dict[str, Any]] = deque(maxlen=100)
 _sparql_log_lock = Lock()
 _sparql_log_sequence = 0
 
-M4I = Namespace("http://w3id.org/nfdi4ing/metadata4ing#")
-BFO_HAS_PART = Namespace("http://purl.obolibrary.org/obo/")["BFO_0000051"]
-
-
 class UpstreamError(RuntimeError):
     pass
 
 
 class RunNotFoundError(LookupError):
     pass
+
+
+def _unit_url(unit: str | None) -> str | None:
+    """Expand a compact QUDT unit identifier left unresolved by JSON-LD."""
+    if unit and unit.startswith("unit:"):
+        return f"{QUDT_UNIT_PREFIX}{unit.removeprefix('unit:')}"
+    return unit
 
 
 def _start_sparql_log(query: str) -> int:
@@ -162,8 +163,8 @@ def _benchmark_uuid(benchmark_url: str) -> str:
     return identifier
 
 
-def _download_benchmark_graph(benchmark_url: str) -> Graph:
-    """Download and parse the benchmark's Annotation Collection JSON-LD."""
+def _benchmark_metadata(benchmark_url: str) -> dict[str, Any]:
+    """Download and load benchmark metadata with semantic-benchmark."""
     username = CONFIG.get("ROHUB_USERNAME")
     password = CONFIG.get("ROHUB_PASSWORD")
     if not username or not password:
@@ -171,6 +172,7 @@ def _download_benchmark_graph(benchmark_url: str) -> Graph:
             "ROHUB_USERNAME and ROHUB_PASSWORD are required to load benchmark metadata"
         )
 
+    from semantic_benchmark import BenchmarkLoader
     from semantic_benchmark.rohub import download_benchmark_resources
 
     identifier = _benchmark_uuid(benchmark_url)
@@ -184,53 +186,34 @@ def _download_benchmark_graph(benchmark_url: str) -> Graph:
                 semantic_resource_filename=destination,
                 use_production_rohub=True,
             )
-            return Graph().parse(destination, format="json-ld")
+            benchmark = BenchmarkLoader(destination).load()
+
+            def variable_metadata(variable) -> dict[str, str | None]:
+                return {
+                    "name": variable.label or variable.id,
+                    "unit": _unit_url(variable.unit),
+                }
+            
+            parameters = [
+                variable_metadata(parameter)
+                for parameter in (
+                    benchmark.parameter_sets[0].parts
+                    if benchmark.parameter_sets
+                    else []
+                )
+            ]
+            metrics = [variable_metadata(metric) for metric in benchmark.evaluates]
+            return {
+                "benchmark": benchmark.label or benchmark.id,
+                "parameters": parameters,
+                "metrics": metrics,
+            }
     except UpstreamError:
         raise
     except Exception as error:
         raise UpstreamError(
-            f"Could not download metadata for benchmark {identifier}"
+            f"Could not load metadata for benchmark {identifier}"
         ) from error
-
-
-def _labels(graph: Graph, subjects) -> list[str]:
-    return sorted(
-        {
-            str(label)
-            for subject in subjects
-            for label in graph.objects(subject, RDFS.label)
-        },
-        key=str.casefold,
-    )
-
-
-def _benchmark_metadata(benchmark_url: str) -> dict[str, str | list[str]]:
-    """Extract the same benchmark, parameter, and metric fields as the notebook."""
-    graph = _download_benchmark_graph(benchmark_url)
-    benchmarks = list(graph.subjects(RDF.type, M4I.Benchmark))
-    names = _labels(graph, benchmarks)
-    parameters = _labels(
-        graph,
-        (
-            parameter
-            for benchmark in benchmarks
-            for parameter_set in graph.objects(benchmark, M4I.hasParameterSet)
-            for parameter in graph.objects(parameter_set, BFO_HAS_PART)
-        ),
-    )
-    metrics = _labels(
-        graph,
-        (
-            metric
-            for benchmark in benchmarks
-            for metric in graph.objects(benchmark, M4I.evaluates)
-        ),
-    )
-    return {
-        "benchmark": names[0] if names else "",
-        "parameters": parameters,
-        "metrics": metrics,
-    }
 
 
 def _dynamic_query(parameters: list[str], metrics: list[str], graph: str) -> str:
@@ -267,8 +250,8 @@ def query_run_values(run_id: str) -> dict[str, Any]:
     if run is None:
         raise RunNotFoundError(f"Published run not found: {run_id}")
 
-    parameters = list(run.get("parameters") or [])
-    metrics = list(run.get("metrics") or [])
+    parameters = [item["name"] for item in run.get("parameters") or []]
+    metrics = [item["name"] for item in run.get("metrics") or []]
     graph = run.get("graph")
     if not graph:
         raise UpstreamError("This run does not have a named graph")

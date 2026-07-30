@@ -49,8 +49,8 @@ ROHUB_PASSWORD=your-rohub-password
 
 The `.env` configuration file is read directly and excluded from Git. These
 credentials are used to download each benchmark's JSON-LD Annotation Collection;
-the catalog reads its benchmark name, parameters, and metrics with RDFLib,
-following `joint-kg.ipynb`.
+the catalog loads its benchmark name, parameters, metrics, and units with
+`semantic_benchmark.BenchmarkLoader`, following `joint-kg.ipynb`.
 
 ## Publish
 

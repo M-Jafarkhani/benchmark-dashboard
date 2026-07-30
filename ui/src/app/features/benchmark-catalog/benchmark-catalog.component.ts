@@ -1,4 +1,4 @@
-import { Component, computed, input, output } from '@angular/core';
+import { ChangeDetectorRef, Component, computed, inject, input, output } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
   ColDef,
@@ -6,23 +6,28 @@ import {
   RowDataUpdatedEvent,
   SelectionChangedEvent,
 } from 'ag-grid-community';
+import { DialogModule } from 'primeng/dialog';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { TabsModule } from 'primeng/tabs';
 
-import { Run } from '../../core/models/benchmark.models';
+import { BenchmarkVariable, Run } from '../../core/models/benchmark.models';
 import { imageLink } from '../../shared/utils/grid-cell-renderers';
 import { resourceLabel } from '../../shared/utils/display-formatters';
 
 @Component({
   selector: 'app-benchmark-catalog',
   standalone: true,
-  imports: [AgGridAngular, ProgressSpinnerModule],
+  imports: [AgGridAngular, DialogModule, ProgressSpinnerModule, TabsModule],
   templateUrl: './benchmark-catalog.component.html',
   styleUrl: './benchmark-catalog.component.css',
 })
 export class BenchmarkCatalogComponent {
+  private readonly changeDetector = inject(ChangeDetectorRef);
   readonly runs = input.required<Run[]>();
   readonly loading = input(false);
   readonly selectionChange = output<Run | null>();
+  metadataVisible = false;
+  metadataBenchmark?: Run;
 
   readonly benchmarks = computed(() => [
     ...new Map(this.runs().map((run) => [run.benchmark_url || run.benchmark_repo, run])).values(),
@@ -30,6 +35,22 @@ export class BenchmarkCatalogComponent {
   readonly defaultColDef: ColDef = { sortable: true, resizable: true };
   readonly getRowId = (params: { data: Run }) =>
     params.data.benchmark_url || params.data.benchmark_repo;
+  readonly variableColumns: ColDef<BenchmarkVariable>[] = [
+    {
+      headerName: 'Name',
+      field: 'name',
+      flex: 1,
+      minWidth: 220,
+    },
+    {
+      headerName: 'Unit',
+      field: 'unit',
+      flex: 1,
+      minWidth: 220,
+      cellRenderer: (params: ICellRendererParams<BenchmarkVariable>) =>
+        this.unitLink(params.data?.unit),
+    },
+  ];
   readonly columns: ColDef<Run>[] = [
     {
       headerName: 'Benchmark',
@@ -45,6 +66,14 @@ export class BenchmarkCatalogComponent {
       width: 140,
       cellClass: 'centered-column',
       headerClass: 'centered-column-header',
+    },
+    {
+      headerName: 'Metadata',
+      width: 110,
+      sortable: false,
+      cellClass: 'centered-column',
+      headerClass: 'centered-column-header',
+      cellRenderer: (params: ICellRendererParams<Run>) => this.metadataButton(params.data),
     },
     {
       headerName: 'GitHub',
@@ -90,6 +119,35 @@ export class BenchmarkCatalogComponent {
         ),
     },
   ];
+
+  private metadataButton(benchmark?: Run): Node {
+    if (!benchmark) return document.createTextNode('—');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'metadata-button';
+    button.title = 'View parameters and metrics';
+    button.setAttribute('aria-label', 'View parameters and metrics');
+    button.innerHTML = '<i class="pi pi-list" aria-hidden="true"></i>';
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.metadataBenchmark = benchmark;
+      this.metadataVisible = true;
+      this.changeDetector.detectChanges();
+    });
+    return button;
+  }
+
+  private unitLink(unit?: string | null): Node {
+    if (!unit) return document.createTextNode('—');
+    const link = document.createElement('a');
+    link.href = unit;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = resourceLabel(unit);
+    link.title = unit;
+    link.className = 'unit-link';
+    return link;
+  }
 
   private jupyterUrl(repository?: string | null): string | null {
     const repositoryName = repository

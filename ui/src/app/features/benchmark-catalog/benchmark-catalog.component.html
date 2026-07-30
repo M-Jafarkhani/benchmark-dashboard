@@ -28,3 +28,41 @@
     }
   </div>
 </section>
+
+<p-dialog
+  [(visible)]="metadataVisible"
+  [modal]="true"
+  [style]="{ width: 'min(760px, 94vw)' }"
+  header="{{ metadataBenchmark?.benchmark || 'Benchmark metadata' }}"
+>
+  @if (metadataBenchmark) {
+    <p-tabs value="parameters">
+      <p-tablist>
+        <p-tab value="parameters">
+          Parameters ({{ metadataBenchmark.parameters.length }})
+        </p-tab>
+        <p-tab value="metrics">Metrics ({{ metadataBenchmark.metrics.length }})</p-tab>
+      </p-tablist>
+      <p-tabpanels>
+        <p-tabpanel value="parameters">
+          <ag-grid-angular
+            class="metadata-grid"
+            [rowData]="metadataBenchmark.parameters"
+            [columnDefs]="variableColumns"
+            [defaultColDef]="defaultColDef"
+            domLayout="autoHeight"
+          />
+        </p-tabpanel>
+        <p-tabpanel value="metrics">
+          <ag-grid-angular
+            class="metadata-grid"
+            [rowData]="metadataBenchmark.metrics"
+            [columnDefs]="variableColumns"
+            [defaultColDef]="defaultColDef"
+            domLayout="autoHeight"
+          />
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  }
+</p-dialog>

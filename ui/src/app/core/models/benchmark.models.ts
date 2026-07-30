@@ -8,8 +8,13 @@ export interface Run {
   datePublished: string | null;
   version: string | null;
   benchmark: string;
-  parameters: string[];
-  metrics: string[];
+  parameters: BenchmarkVariable[];
+  metrics: BenchmarkVariable[];
+}
+
+export interface BenchmarkVariable {
+  name: string;
+  unit: string | null;
 }
 
 export interface ValueColumn {
