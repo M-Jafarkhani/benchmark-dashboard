@@ -20,22 +20,6 @@ CONFIG = dotenv_values(Path(__file__).resolve().parent.parent / ".env")
 ZBMATH_API = "https://api.zbmath.org/v1/software"
 CACHE_SECONDS = 300
 
-RUNS_QUERY = """
-PREFIX schemas: <https://schema.org/>
-PREFIX schema: <http://schema.org/>
-PREFIX m4i: <http://w3id.org/nfdi4ing/metadata4ing#>
-PREFIX prov: <http://www.w3.org/ns/prov#>
-
-SELECT DISTINCT ?run_id ?benchmark_url ?benchmark_repo ?software_url ?datePublished ?version
-WHERE {
-    ?run_id m4i:investigates ?benchmark_repo .
-    ?run_id prov:used ?software_url .
-    ?run_id schema:datePublished ?datePublished .
-    ?benchmark_url schemas:codeRepository ?benchmark_repo .
-    ?benchmark_url schemas:version ?version .
-}
-"""
-
 _cache: tuple[float, list[dict[str, Any]]] | None = None
 _cache_lock = Lock()
 _sparql_log: deque[dict[str, Any]] = deque(maxlen=100)
@@ -130,18 +114,6 @@ def _software_name(url: str) -> str:
         return url.rstrip("/").rsplit("/", 1)[-1]
     payload = _fetch_json(f"{ZBMATH_API}/{match.group(1)}")
     return payload["result"]["name"]
-
-
-def _graph_query(run_ids: list[str]) -> str:
-    values = " ".join(f"<{run_id}>" for run_id in run_ids)
-    return f"""
-PREFIX schema: <http://schema.org/>
-SELECT ?run_id ?graph
-WHERE {{
-  VALUES ?run_id {{ {values} }}
-  GRAPH ?graph {{ ?run_id a schema:Dataset . }}
-}}
-"""
 
 
 def _benchmark_uuid(benchmark_url: str) -> str:
@@ -276,9 +248,14 @@ def load_runs(*, force: bool = False) -> list[dict[str, Any]]:
         if not force and _cache and time.monotonic() - _cache[0] < CACHE_SECONDS:
             return _cache[1]
 
-        rows = _sparql(RUNS_QUERY)
+        from semantic_benchmark.rohub.provenance import (
+            build_published_runs_query,
+            build_run_named_graphs_query,
+        )
+
+        rows = _sparql(build_published_runs_query())
         run_ids = [row["run_id"] for row in rows if row.get("run_id")]
-        graphs = _sparql(_graph_query(run_ids)) if run_ids else []
+        graphs = _sparql(build_run_named_graphs_query(run_ids)) if run_ids else []
         graph_by_run = {row["run_id"]: row.get("graph") for row in graphs}
 
         software_urls = sorted(
