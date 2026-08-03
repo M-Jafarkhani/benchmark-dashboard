@@ -153,7 +153,6 @@ def _benchmark_metadata(benchmark_url: str) -> dict[str, Any]:
             benchmark = BenchmarkLoader(destination).load()
 
             def variable_metadata(variable) -> dict[str, str | None]:
-                print(variable)
                 return {
                     "name": variable.label or variable.id,
                     "unit": getattr(variable, "unit_iri", None) or variable.unit,
