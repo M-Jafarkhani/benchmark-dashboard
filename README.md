@@ -30,15 +30,8 @@ npm start
 Open <http://localhost:4200>. Angular proxies `/api` calls to FastAPI on port
 8000. API documentation is at <http://localhost:8000/docs>.
 
-For a production-style local run, build Angular before starting FastAPI:
-
-```bash
-cd ui && npm ci && npm run build
-cd .. && uvicorn app.main:app
-```
-
-Then open <http://localhost:8000>. Results are cached for five minutes, while
-the page's Refresh button requests fresh upstream data.
+Results are cached for five minutes, while the page's Refresh button requests
+fresh upstream data.
 
 Copy `.env.example` to `.env`, then fill in your RoHub credentials:
 
@@ -52,18 +45,30 @@ credentials are used to download each benchmark's JSON-LD Annotation Collection;
 the catalog loads its benchmark name, parameters, metrics, and units with
 `semantic_benchmark.BenchmarkLoader`, following `joint-kg.ipynb`.
 
-## Publish
+## Container images
 
-Build and deploy the included Dockerfile on a platform such as Render, Railway,
-Fly.io, or any container host. A Render Blueprint (`render.yaml`) is included,
-so that repository can be deployed there directly. The service needs outbound
-HTTPS access to the RoHub SPARQL endpoint and `api.zbmath.org`, plus a populated
-`.env` configuration file containing the RoHub credentials.
+The backend and UI are separate images. Build them from the repository root:
 
 ```bash
-docker build -t benchmark-dashboard .
-docker run --rm -p 8000:8000 benchmark-dashboard
+podman build -f Containerfile.service -t semantic-benchmark-service .
+podman build -f Containerfile.ui -t semantic-benchmark-ui .
 ```
+
+The UI's Nginx server proxies `/api` to `service:8000` by default. Override
+`SERVICE_HOST` and `SERVICE_PORT` when the backend uses a different DNS name or
+port. For example, run both images in one Podman network:
+
+```bash
+podman network create semantic-benchmark
+podman run -d --name service --network semantic-benchmark --env-file .env \
+  -p 8000:8000 semantic-benchmark-service
+podman run -d --name ui --network semantic-benchmark \
+  -p 8080:80 semantic-benchmark-ui
+```
+
+Open <http://localhost:8080>. The service needs outbound HTTPS access to the
+RoHub SPARQL endpoint and `api.zbmath.org`, plus the RoHub credentials described
+above.
 
 ## Test
 
