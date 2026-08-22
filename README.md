@@ -16,15 +16,14 @@ provides interactive comparison plots.
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload
 ```
 
-In a second terminal, start Angular's development server:
+Install the UI dependencies, then start both the service and UI with one
+command from the repository root:
 
 ```bash
-cd ui
-npm install
-npm start
+npm --prefix ui install
+make dev
 ```
 
 Open <http://localhost:4200>. Angular proxies `/api` calls to FastAPI on port
