@@ -32,14 +32,16 @@ Open <http://localhost:4200>. Angular proxies `/api` calls to FastAPI on port
 Results are cached for five minutes, while the page's Refresh button requests
 fresh upstream data.
 
-Copy `.env.example` to `.env`, then fill in your RoHub credentials:
+Create `app/.env`, then fill in your RoHub credentials:
 
 ```dotenv
 ROHUB_USERNAME=your-rohub-username
 ROHUB_PASSWORD=your-rohub-password
 ```
 
-The `.env` configuration file is read directly and excluded from Git. These
+The `app/.env` configuration file is loaded for local development and excluded from
+Git. Runtime environment variables take precedence, so Podman's `--env-file`
+option can inject the same credentials into the service container. These
 credentials are used to download each benchmark's JSON-LD Annotation Collection;
 the catalog loads its benchmark name, parameters, metrics, and units with
 `semantic_benchmark.BenchmarkLoader`, following `joint-kg.ipynb`.
@@ -59,7 +61,7 @@ port. For example, run both images in one Podman network:
 
 ```bash
 podman network create semantic-benchmark
-podman run -d --name service --network semantic-benchmark --env-file .env \
+podman run -d --name service --network semantic-benchmark --env-file app/.env \
   -p 8000:8000 semantic-benchmark-service
 podman run -d --name ui --network semantic-benchmark \
   -p 8080:80 semantic-benchmark-ui

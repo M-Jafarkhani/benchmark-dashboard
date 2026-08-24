@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
 import tempfile
 import time
@@ -14,8 +15,11 @@ from threading import Lock
 from typing import Any
 from urllib.request import Request, urlopen
 
-from dotenv import dotenv_values
-CONFIG = dotenv_values(Path(__file__).resolve().parent.parent / ".env")
+from dotenv import load_dotenv
+
+# Support a service-local .env file during development. Environment variables
+# supplied by the runtime (for example, Podman's --env-file) take precedence.
+load_dotenv(Path(__file__).resolve().parent / ".env", override=False)
 
 ZBMATH_API = "https://api.zbmath.org/v1/software"
 CACHE_SECONDS = 300
@@ -129,8 +133,8 @@ def _benchmark_uuid(benchmark_url: str) -> str:
 
 def _benchmark_metadata(benchmark_url: str) -> dict[str, Any]:
     """Download and load benchmark metadata with semantic-benchmark."""
-    username = CONFIG.get("ROHUB_USERNAME")
-    password = CONFIG.get("ROHUB_PASSWORD")
+    username = os.getenv("ROHUB_USERNAME")
+    password = os.getenv("ROHUB_PASSWORD")
     if not username or not password:
         raise UpstreamError(
             "ROHUB_USERNAME and ROHUB_PASSWORD are required to load benchmark metadata"
