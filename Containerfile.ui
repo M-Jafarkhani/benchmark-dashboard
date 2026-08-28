@@ -10,6 +10,8 @@ RUN CI=1 npm run build -- --progress=false
 
 FROM nginx:1.29-alpine
 
+RUN apk update && apk upgrade --no-cache
+
 ENV SERVICE_HOST=service \
     SERVICE_PORT=9000
 
